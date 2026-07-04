@@ -27,10 +27,10 @@ export function Modal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="animate-rise relative z-10 w-full max-w-lg rounded-t-xl2 border border-line bg-surface p-6 sm:rounded-xl2">
-        <div className="mb-5 flex items-center justify-between">
+      <div className="animate-rise relative z-10 flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-xl2 border border-line bg-surface sm:rounded-xl2">
+        <div className="flex shrink-0 items-center justify-between px-6 pb-4 pt-6">
           <h2 className="font-display text-lg font-semibold">{title}</h2>
           <button
             onClick={onClose}
@@ -40,7 +40,7 @@ export function Modal({
             ✕
           </button>
         </div>
-        {children}
+        <div className="overflow-y-auto px-6 pb-6">{children}</div>
       </div>
     </div>
   );
