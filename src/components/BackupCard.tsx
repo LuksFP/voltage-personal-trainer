@@ -14,13 +14,14 @@ import { DownloadIcon, UploadIcon } from "./icons";
 type Msg = { tom: "ok" | "erro"; texto: string } | null;
 
 export function BackupCard() {
-  const { alunos, treinos, avaliacoes, sessoes, substituirTudo } = useStore();
+  const { alunos, treinos, avaliacoes, sessoes, pagamentos, biblioteca, substituirTudo } =
+    useStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<Msg>(null);
   const [ultimo, setUltimo] = useState<string | null>(() => ultimoBackup());
 
   const exportar = () => {
-    const json = montarBackup({ alunos, treinos, avaliacoes, sessoes });
+    const json = montarBackup({ alunos, treinos, avaliacoes, sessoes, pagamentos, biblioteca });
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -38,7 +39,7 @@ export function BackupCard() {
     try {
       const texto = await file.text();
       const dados = parseBackup(texto);
-      const resumo = `${dados.alunos.length} alunos, ${dados.treinos.length} treinos, ${dados.avaliacoes.length} avaliações e ${dados.sessoes.length} sessões`;
+      const resumo = `${dados.alunos.length} alunos, ${dados.treinos.length} treinos, ${dados.avaliacoes.length} avaliações, ${dados.sessoes.length} sessões e ${dados.pagamentos.length} cobranças`;
       if (
         !confirm(
           `Importar ${resumo}?\n\nIsto substitui TODOS os dados atuais deste navegador. Recomendado exportar um backup antes.`,
@@ -66,12 +67,14 @@ export function BackupCard() {
         perder nada.
       </p>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-6">
         {[
           { label: "Alunos", n: alunos.length },
           { label: "Treinos", n: treinos.length },
           { label: "Avaliações", n: avaliacoes.length },
           { label: "Sessões", n: sessoes.length },
+          { label: "Cobranças", n: pagamentos.length },
+          { label: "Exercícios", n: biblioteca.length },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border border-line bg-surface p-3 text-center">
             <p className="font-display text-2xl font-bold">{s.n}</p>

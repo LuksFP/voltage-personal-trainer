@@ -15,8 +15,26 @@ export interface Aluno {
   objetivo?: Objetivo;
   modalidade?: string;
   pesoMeta?: number; // kg — meta de peso, vira linha-alvo no gráfico de evolução
+  mensalidade?: number; // R$ — valor da mensalidade; base para gerar cobranças
+  diaVencimento?: number; // 1-28 — dia do mês em que a mensalidade vence
   observacoes?: string;
   ativo: boolean;
+  criadoEm: string;
+}
+
+export type StatusPagamento = "pago" | "pendente";
+
+// Cobrança de mensalidade de um aluno numa competência (mês de referência).
+// "atrasado" não é armazenado — é derivado de status "pendente" + vencimento no passado.
+export interface Pagamento {
+  id: string;
+  alunoId: string;
+  competencia: string; // "YYYY-MM" — mês de referência
+  valor: number; // R$ cobrado (snapshot da mensalidade na hora da cobrança)
+  vencimento: string; // "YYYY-MM-DD"
+  status: StatusPagamento;
+  pagoEm?: string; // "YYYY-MM-DD" quando marcado como pago
+  metodo?: string; // Pix, Dinheiro, Cartão…
   criadoEm: string;
 }
 
@@ -60,6 +78,45 @@ export interface Exercicio {
   carga: string;
   descanso: string;
   observacoes?: string;
+  bibliotecaId?: string; // referência opcional a um item da biblioteca (vídeo/instruções)
+}
+
+export type GrupoMuscular =
+  | "Peito"
+  | "Costas"
+  | "Pernas"
+  | "Glúteos"
+  | "Ombro"
+  | "Bíceps"
+  | "Tríceps"
+  | "Abdômen"
+  | "Panturrilha"
+  | "Cardio"
+  | "Corpo todo";
+
+export const GRUPOS_MUSCULARES: GrupoMuscular[] = [
+  "Peito",
+  "Costas",
+  "Pernas",
+  "Glúteos",
+  "Ombro",
+  "Bíceps",
+  "Tríceps",
+  "Abdômen",
+  "Panturrilha",
+  "Cardio",
+  "Corpo todo",
+];
+
+// Exercício do catálogo reutilizável (biblioteca), separado do exercício dentro de uma planilha.
+export interface ExercicioBiblioteca {
+  id: string;
+  nome: string;
+  grupo: GrupoMuscular;
+  equipamento?: string; // ex.: "Barra", "Halteres", "Peso corporal"
+  instrucoes?: string;
+  videoUrl?: string; // link de vídeo/gif demonstrativo (YouTube ou direto)
+  criadoEm: string;
 }
 
 export interface Divisao {

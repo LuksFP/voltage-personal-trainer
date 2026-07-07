@@ -36,6 +36,8 @@ export type AlunoFormValues = {
   objetivo: Objetivo | "";
   modalidade: string;
   pesoMeta: string; // string no form; convertida pra número na página
+  mensalidade: string; // R$ — string no form
+  diaVencimento: string; // 1-28 — string no form
   observacoes: string;
   ativo: boolean;
 };
@@ -56,6 +58,8 @@ export function AlunoForm({
     objetivo: initial?.objetivo ?? "",
     modalidade: initial?.modalidade ?? "",
     pesoMeta: initial?.pesoMeta != null ? String(initial.pesoMeta).replace(".", ",") : "",
+    mensalidade: initial?.mensalidade != null ? String(initial.mensalidade).replace(".", ",") : "",
+    diaVencimento: initial?.diaVencimento != null ? String(initial.diaVencimento) : "",
     observacoes: initial?.observacoes ?? "",
     ativo: initial?.ativo ?? true,
   });
@@ -142,6 +146,25 @@ export function AlunoForm({
           className="sm:max-w-[10rem]"
         />
       </Field>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Mensalidade (R$)" hint="Usada para gerar as cobranças no Financeiro">
+          <Input
+            value={v.mensalidade}
+            onChange={(e) => set("mensalidade", e.target.value)}
+            placeholder="Ex.: 260"
+            inputMode="decimal"
+          />
+        </Field>
+        <Field label="Dia de vencimento" hint="Dia do mês (1 a 28)">
+          <Input
+            value={v.diaVencimento}
+            onChange={(e) => set("diaVencimento", e.target.value)}
+            placeholder="Ex.: 5"
+            inputMode="numeric"
+          />
+        </Field>
+      </div>
 
       <Field label="Observações" hint="Lesões, restrições, disponibilidade…">
         <Textarea

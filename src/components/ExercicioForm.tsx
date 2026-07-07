@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import type { Exercicio } from "@/lib/types";
-import { Button, Field, Input, Textarea } from "./ui";
+import { useMemo, useState } from "react";
+import { useStore } from "@/lib/store";
+import type { Exercicio, GrupoMuscular } from "@/lib/types";
+import { GRUPOS_MUSCULARES } from "@/lib/types";
+import { Button, Field, Input, Select, Textarea } from "./ui";
+import { PlayIcon } from "./icons";
 
 export type ExercicioValues = Omit<Exercicio, "id">;
 
@@ -15,6 +18,8 @@ export function ExercicioForm({
   onSubmit: (v: ExercicioValues) => void;
   onCancel: () => void;
 }) {
+  const { biblioteca, getExercicioBiblioteca } = useStore();
+
   const [v, setV] = useState<ExercicioValues>({
     nome: initial?.nome ?? "",
     series: initial?.series ?? "3",
@@ -22,11 +27,39 @@ export function ExercicioForm({
     carga: initial?.carga ?? "",
     descanso: initial?.descanso ?? "60s",
     observacoes: initial?.observacoes ?? "",
+    bibliotecaId: initial?.bibliotecaId,
   });
+
+  // Opções da biblioteca agrupadas por grupo muscular (para o <optgroup>).
+  const porGrupo = useMemo(() => {
+    const m = new Map<GrupoMuscular, typeof biblioteca>();
+    for (const b of [...biblioteca].sort((a, b) => a.nome.localeCompare(b.nome))) {
+      const arr = m.get(b.grupo) ?? [];
+      arr.push(b);
+      m.set(b.grupo, arr);
+    }
+    return m;
+  }, [biblioteca]);
 
   const set = <K extends keyof ExercicioValues>(k: K, val: ExercicioValues[K]) =>
     setV((p) => ({ ...p, [k]: val }));
 
+  // Ao escolher da biblioteca, preenche nome e vincula a referência.
+  const escolherDaBiblioteca = (id: string) => {
+    const item = getExercicioBiblioteca(id);
+    if (!item) return;
+    setV((p) => ({ ...p, nome: item.nome, bibliotecaId: id }));
+  };
+
+  // Editar o nome manualmente desvincula se não bater mais com o item referenciado.
+  const alterarNome = (nome: string) =>
+    setV((p) => {
+      const ref = p.bibliotecaId ? getExercicioBiblioteca(p.bibliotecaId) : undefined;
+      const bibliotecaId = ref && ref.nome === nome.trim() ? p.bibliotecaId : undefined;
+      return { ...p, nome, bibliotecaId };
+    });
+
+  const vinculado = v.bibliotecaId ? getExercicioBiblioteca(v.bibliotecaId) : undefined;
   const canSubmit = v.nome.trim().length >= 2;
 
   return (
@@ -37,13 +70,49 @@ export function ExercicioForm({
       }}
       className="space-y-4"
     >
+      {biblioteca.length > 0 && (
+        <Field label="Da biblioteca" hint="Escolha um exercício do catálogo ou digite abaixo">
+          <Select
+            value={v.bibliotecaId ?? ""}
+            onChange={(e) => (e.target.value ? escolherDaBiblioteca(e.target.value) : undefined)}
+          >
+            <option value="">— Escolher da biblioteca —</option>
+            {GRUPOS_MUSCULARES.filter((g) => porGrupo.has(g)).map((g) => (
+              <optgroup key={g} label={g}>
+                {porGrupo.get(g)!.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.nome}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </Select>
+        </Field>
+      )}
+
       <Field label="Exercício">
         <Input
           value={v.nome}
-          onChange={(e) => set("nome", e.target.value)}
+          onChange={(e) => alterarNome(e.target.value)}
           placeholder="Ex.: Supino reto com barra"
           autoFocus
         />
+        {vinculado && (
+          <span className="mt-1 flex items-center gap-2 text-xs text-muted">
+            Vinculado à biblioteca · {vinculado.grupo}
+            {vinculado.videoUrl && (
+              <a
+                href={vinculado.videoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 font-semibold text-accent hover:underline"
+              >
+                <PlayIcon className="h-3.5 w-3.5" />
+                vídeo
+              </a>
+            )}
+          </span>
+        )}
       </Field>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

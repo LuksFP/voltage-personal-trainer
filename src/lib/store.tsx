@@ -8,8 +8,25 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Aluno, Avaliacao, Divisao, Exercicio, Sessao, Treino } from "./types";
-import { alunosSeed, avaliacoesSeed, sessoesSeed, treinosSeed } from "./seed";
+import type {
+  Aluno,
+  Avaliacao,
+  Divisao,
+  Exercicio,
+  ExercicioBiblioteca,
+  Pagamento,
+  Sessao,
+  Treino,
+} from "./types";
+import { vencimentoDe } from "./pagamentos";
+import {
+  alunosSeed,
+  avaliacoesSeed,
+  bibliotecaSeed,
+  pagamentosSeed,
+  sessoesSeed,
+  treinosSeed,
+} from "./seed";
 
 const STORAGE_KEY = "pt.app.v1";
 
@@ -18,6 +35,8 @@ export interface StoreData {
   treinos: Treino[];
   avaliacoes: Avaliacao[];
   sessoes: Sessao[];
+  pagamentos: Pagamento[];
+  biblioteca: ExercicioBiblioteca[];
 }
 
 interface StoreContextValue extends StoreData {
@@ -37,6 +56,21 @@ interface StoreContextValue extends StoreData {
   addSessao: (data: Omit<Sessao, "id" | "criadoEm" | "status"> & { status?: Sessao["status"] }) => Sessao;
   updateSessao: (id: string, patch: Partial<Sessao>) => void;
   removeSessao: (id: string) => void;
+  // pagamentos (financeiro)
+  pagamentosDaCompetencia: (competencia: string) => Pagamento[];
+  addPagamento: (data: Omit<Pagamento, "id" | "criadoEm" | "status"> & { status?: Pagamento["status"] }) => Pagamento;
+  updatePagamento: (id: string, patch: Partial<Pagamento>) => void;
+  removePagamento: (id: string) => void;
+  marcarPago: (id: string, dados?: { pagoEm?: string; metodo?: string }) => void;
+  marcarPendente: (id: string) => void;
+  // Gera as cobranças de uma competência para os alunos ativos com mensalidade.
+  // Não duplica: pula quem já tem cobrança no mês. Retorna quantas foram criadas.
+  gerarCobrancas: (competencia: string) => number;
+  // biblioteca de exercícios (catálogo reutilizável)
+  addExercicioBiblioteca: (data: Omit<ExercicioBiblioteca, "id" | "criadoEm">) => ExercicioBiblioteca;
+  updateExercicioBiblioteca: (id: string, patch: Partial<ExercicioBiblioteca>) => void;
+  removeExercicioBiblioteca: (id: string) => void;
+  getExercicioBiblioteca: (id: string) => ExercicioBiblioteca | undefined;
   // treinos
   treinosDoAluno: (alunoId: string) => Treino[];
   addTreino: (alunoId: string, nome: string, descricao?: string) => Treino;
@@ -59,12 +93,22 @@ function uid(prefix: string): string {
   return `${prefix}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+// Data de hoje em YYYY-MM-DD local (sem deslocamento de fuso do toISOString).
+function isoLocalHoje(): string {
+  const d = new Date();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<StoreData>({
     alunos: [],
     treinos: [],
     avaliacoes: [],
     sessoes: [],
+    pagamentos: [],
+    biblioteca: [],
   });
   const [hydrated, setHydrated] = useState(false);
 
@@ -75,6 +119,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       treinos: treinosSeed,
       avaliacoes: avaliacoesSeed,
       sessoes: sessoesSeed(),
+      pagamentos: pagamentosSeed(),
+      biblioteca: bibliotecaSeed,
     };
     let inicial: StoreData = seed;
     try {
@@ -87,6 +133,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           treinos: parsed.treinos ?? [],
           avaliacoes: parsed.avaliacoes ?? [],
           sessoes: parsed.sessoes ?? [],
+          pagamentos: parsed.pagamentos ?? [],
+          // biblioteca é catálogo de referência: bases antigas herdam o seed inicial
+          biblioteca: parsed.biblioteca ?? bibliotecaSeed,
         };
       }
     } catch {
@@ -116,6 +165,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       treinos: data.treinos,
       avaliacoes: data.avaliacoes,
       sessoes: data.sessoes,
+      pagamentos: data.pagamentos,
+      biblioteca: data.biblioteca,
 
       addAluno: (input) => {
         const aluno: Aluno = {
@@ -139,6 +190,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           treinos: d.treinos.filter((t) => t.alunoId !== id),
           avaliacoes: d.avaliacoes.filter((av) => av.alunoId !== id),
           sessoes: d.sessoes.filter((s) => s.alunoId !== id),
+          pagamentos: d.pagamentos.filter((p) => p.alunoId !== id),
         })),
       getAluno: (id) => data.alunos.find((a) => a.id === id),
 
@@ -183,6 +235,86 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         })),
       removeSessao: (id) =>
         setData((d) => ({ ...d, sessoes: d.sessoes.filter((s) => s.id !== id) })),
+
+      pagamentosDaCompetencia: (comp) =>
+        data.pagamentos.filter((p) => p.competencia === comp),
+      addPagamento: (input) => {
+        const pagamento: Pagamento = {
+          id: uid("pag"),
+          criadoEm: new Date().toISOString(),
+          status: input.status ?? "pendente",
+          ...input,
+        };
+        setData((d) => ({ ...d, pagamentos: [...d.pagamentos, pagamento] }));
+        return pagamento;
+      },
+      updatePagamento: (id, patch) =>
+        setData((d) => ({
+          ...d,
+          pagamentos: d.pagamentos.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+        })),
+      removePagamento: (id) =>
+        setData((d) => ({ ...d, pagamentos: d.pagamentos.filter((p) => p.id !== id) })),
+      marcarPago: (id, dados) =>
+        setData((d) => ({
+          ...d,
+          pagamentos: d.pagamentos.map((p) =>
+            p.id === id
+              ? {
+                  ...p,
+                  status: "pago",
+                  pagoEm: dados?.pagoEm ?? isoLocalHoje(),
+                  metodo: dados?.metodo ?? p.metodo,
+                }
+              : p,
+          ),
+        })),
+      marcarPendente: (id) =>
+        setData((d) => ({
+          ...d,
+          pagamentos: d.pagamentos.map((p) =>
+            // remove pagoEm/metodo ao reverter para pendente
+            p.id === id ? { ...p, status: "pendente", pagoEm: undefined, metodo: undefined } : p,
+          ),
+        })),
+      gerarCobrancas: (comp) => {
+        const jaCobrado = new Set(
+          data.pagamentos.filter((p) => p.competencia === comp).map((p) => p.alunoId),
+        );
+        const novas: Pagamento[] = data.alunos
+          .filter((a) => a.ativo && (a.mensalidade ?? 0) > 0 && !jaCobrado.has(a.id))
+          .map((a) => ({
+            id: uid("pag"),
+            alunoId: a.id,
+            competencia: comp,
+            valor: a.mensalidade!,
+            vencimento: vencimentoDe(comp, a.diaVencimento ?? 5),
+            status: "pendente" as const,
+            criadoEm: new Date().toISOString(),
+          }));
+        if (novas.length > 0) {
+          setData((d) => ({ ...d, pagamentos: [...d.pagamentos, ...novas] }));
+        }
+        return novas.length;
+      },
+
+      addExercicioBiblioteca: (input) => {
+        const item: ExercicioBiblioteca = {
+          id: uid("bib"),
+          criadoEm: new Date().toISOString(),
+          ...input,
+        };
+        setData((d) => ({ ...d, biblioteca: [item, ...d.biblioteca] }));
+        return item;
+      },
+      updateExercicioBiblioteca: (id, patch) =>
+        setData((d) => ({
+          ...d,
+          biblioteca: d.biblioteca.map((b) => (b.id === id ? { ...b, ...patch } : b)),
+        })),
+      removeExercicioBiblioteca: (id) =>
+        setData((d) => ({ ...d, biblioteca: d.biblioteca.filter((b) => b.id !== id) })),
+      getExercicioBiblioteca: (id) => data.biblioteca.find((b) => b.id === id),
 
       treinosDoAluno: (alunoId) => data.treinos.filter((t) => t.alunoId === alunoId),
       addTreino: (alunoId, nome, descricao) => {

@@ -17,6 +17,19 @@ export function parsePesoMeta(s: string): number | undefined {
   return s.trim() === "" || Number.isNaN(n) ? undefined : n;
 }
 
+// Mensalidade: número >= 0 (mesma lógica decimal do peso).
+export function parseMensalidade(s: string): number | undefined {
+  const n = parsePesoMeta(s);
+  return n != null && n >= 0 ? n : undefined;
+}
+
+// Dia de vencimento: inteiro entre 1 e 28 (evita meses curtos).
+export function parseDiaVencimento(s: string): number | undefined {
+  const n = Number(s.trim());
+  if (!Number.isInteger(n)) return undefined;
+  return n >= 1 && n <= 28 ? n : undefined;
+}
+
 export default function AlunosPage() {
   const { alunos, treinos, addAluno } = useStore();
   const [busca, setBusca] = useState("");
@@ -50,6 +63,8 @@ export default function AlunosPage() {
       objetivo: v.objetivo || undefined,
       modalidade: v.modalidade || undefined,
       pesoMeta: parsePesoMeta(v.pesoMeta),
+      mensalidade: parseMensalidade(v.mensalidade),
+      diaVencimento: parseDiaVencimento(v.diaVencimento),
       observacoes: v.observacoes || undefined,
       ativo: v.ativo,
     });

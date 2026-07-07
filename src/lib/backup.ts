@@ -53,6 +53,8 @@ export function parseBackup(texto: string): StoreData {
     treinos: treinos as StoreData["treinos"],
     avaliacoes: (arr(dados.avaliacoes) ?? []) as StoreData["avaliacoes"],
     sessoes: (arr(dados.sessoes) ?? []) as StoreData["sessoes"],
+    pagamentos: (arr(dados.pagamentos) ?? []) as StoreData["pagamentos"],
+    biblioteca: (arr(dados.biblioteca) ?? []) as StoreData["biblioteca"],
   };
 }
 

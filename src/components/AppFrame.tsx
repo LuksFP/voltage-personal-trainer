@@ -14,12 +14,17 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   const publica = ROTAS_PUBLICAS.includes(pathname);
+  // Portal do aluno: rota aberta, sem login e fora do Shell do personal.
+  const portal = pathname.startsWith("/portal");
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || portal) return;
     if (!personal && !publica) router.replace("/login");
     if (personal && publica) router.replace("/");
-  }, [personal, loading, publica, router]);
+  }, [personal, loading, publica, portal, router]);
+
+  // O portal não depende da sessão do personal — renderiza direto.
+  if (portal) return <>{children}</>;
 
   // Enquanto hidrata a sessão, evita "flash" de conteúdo protegido
   if (loading) {

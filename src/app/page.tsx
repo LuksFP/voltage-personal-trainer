@@ -177,8 +177,8 @@ export default function DashboardPage() {
               <ChartIcon className="h-5 w-5 text-accent" />
               Por modalidade
             </h2>
-            <Link href="/alunos" className="text-sm font-semibold text-muted hover:text-accent">
-              Ver alunos
+            <Link href="/relatorios" className="text-sm font-semibold text-muted hover:text-accent">
+              Ver relatórios
             </Link>
           </div>
 

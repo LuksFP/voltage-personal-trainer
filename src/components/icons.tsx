@@ -192,6 +192,40 @@ export function MoonIcon(props: IconProps) {
   );
 }
 
+export function BookIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M5 4h9a2 2 0 0 1 2 2v13a1 1 0 0 0-1-1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1ZM16 6h2a2 2 0 0 1 2 2v10a1 1 0 0 0-1-1h-3" />
+    </svg>
+  );
+}
+
+export function PlayIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M10 8.5l5 3.5-5 3.5v-7Z" />
+    </svg>
+  );
+}
+
+export function SearchIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="M20 20l-4-4" />
+    </svg>
+  );
+}
+
+export function WalletIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2M3 7v10a2 2 0 0 0 2 2h13a1 1 0 0 0 1-1v-3M3 7h16a2 2 0 0 1 2 2v1h-5a2 2 0 0 0 0 4h5" />
+    </svg>
+  );
+}
+
 export function PencilIcon(props: IconProps) {
   return (
     <svg {...base} {...props}>

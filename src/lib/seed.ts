@@ -1,4 +1,13 @@
-import type { Aluno, Avaliacao, Sessao, Treino } from "./types";
+import type {
+  Aluno,
+  Avaliacao,
+  ExercicioBiblioteca,
+  GrupoMuscular,
+  Pagamento,
+  Sessao,
+  Treino,
+} from "./types";
+import { competenciaAtual, deslocarCompetencia, vencimentoDe } from "./pagamentos";
 
 export const alunosSeed: Aluno[] = [
   {
@@ -9,6 +18,8 @@ export const alunosSeed: Aluno[] = [
     objetivo: "Hipertrofia",
     modalidade: "Musculação",
     pesoMeta: 84,
+    mensalidade: 260,
+    diaVencimento: 5,
     observacoes: "Sente desconforto no ombro direito em desenvolvimento acima da cabeça.",
     ativo: true,
     criadoEm: "2026-05-12T10:00:00.000Z",
@@ -21,6 +32,8 @@ export const alunosSeed: Aluno[] = [
     objetivo: "Condicionamento",
     modalidade: "Jiu-Jitsu",
     pesoMeta: 77.5,
+    mensalidade: 340,
+    diaVencimento: 10,
     observacoes: "Faixa roxa, compete pela federação. Foco em pegada, core e cardio para as lutas.",
     ativo: true,
     criadoEm: "2026-06-25T18:00:00.000Z",
@@ -32,6 +45,8 @@ export const alunosSeed: Aluno[] = [
     email: "camila.torres@email.com",
     objetivo: "Emagrecimento",
     modalidade: "Musculação",
+    mensalidade: 220,
+    diaVencimento: 15,
     observacoes: "Treina 4x na semana, prefere início da manhã.",
     ativo: true,
     criadoEm: "2026-06-01T09:00:00.000Z",
@@ -42,6 +57,8 @@ export const alunosSeed: Aluno[] = [
     telefone: "(13) 98123-9090",
     objetivo: "Força",
     modalidade: "CrossFit",
+    mensalidade: 240,
+    diaVencimento: 20,
     ativo: true,
     criadoEm: "2026-06-20T14:30:00.000Z",
   },
@@ -154,6 +171,137 @@ export function sessoesSeed(): Sessao[] {
     { id: "s7", alunoId: "a1", data: dia(4), hora: "07:00", duracaoMin: 60, foco: "Treino C — Pernas/Ombro", status: "agendada", criadoEm },
   ];
 }
+
+/**
+ * Cobranças de exemplo ancoradas no mês atual: o mês anterior quitado
+ * (com uma pendência que aparece como "atrasado") e o mês corrente em aberto.
+ */
+export function pagamentosSeed(): Pagamento[] {
+  const criadoEm = new Date().toISOString();
+  const atual = competenciaAtual();
+  const anterior = deslocarCompetencia(atual, -1);
+
+  // [alunoId, valor, diaVencimento]
+  const config: [string, number, number][] = [
+    ["a1", 260, 5],
+    ["a5", 340, 10],
+    ["a2", 220, 15],
+    ["a3", 240, 20],
+  ];
+
+  const pag = (
+    alunoId: string,
+    comp: string,
+    valor: number,
+    dia: number,
+    status: "pago" | "pendente",
+    metodo?: string,
+  ): Pagamento => {
+    const vencimento = vencimentoDe(comp, dia);
+    return {
+      id: `pag_${comp}_${alunoId}`,
+      alunoId,
+      competencia: comp,
+      valor,
+      vencimento,
+      status,
+      ...(status === "pago" ? { pagoEm: vencimento, metodo: metodo ?? "Pix" } : {}),
+      criadoEm,
+    };
+  };
+
+  const out: Pagamento[] = [];
+  for (const [id, valor, dia] of config) {
+    // mês anterior: todos pagos, exceto o a3 (fica pendente e vira "atrasado")
+    out.push(pag(id, anterior, valor, dia, id === "a3" ? "pendente" : "pago"));
+    // mês atual: só o a1 já pagou; o resto segue em aberto
+    out.push(pag(id, atual, valor, dia, id === "a1" ? "pago" : "pendente"));
+  }
+  return out;
+}
+
+/* ---------- Biblioteca de exercícios (catálogo inicial) ---------- */
+// Link de vídeo demonstrativo: busca no YouTube pelo nome (sempre válido, não quebra).
+const yt = (nome: string) =>
+  `https://www.youtube.com/results?search_query=${encodeURIComponent(`${nome} execução`)}`;
+
+// [nome, equipamento, instruções] por grupo muscular.
+const catalogo: Record<GrupoMuscular, [string, string, string][]> = {
+  Peito: [
+    ["Supino reto com barra", "Barra", "Desça a barra até o peito controlando; empurre sem travar o cotovelo."],
+    ["Supino inclinado com halteres", "Halteres", "Banco a 30-45°, desça até alinhar com o peito, foco no peitoral superior."],
+    ["Crossover", "Polia", "Puxe as polias juntando as mãos à frente, contraia o peito no fim."],
+    ["Crucifixo na máquina", "Máquina", "Abra e feche controlando, sem estender demais o ombro."],
+    ["Flexão de braço", "Peso corporal", "Corpo alinhado, desça até quase tocar o chão, suba estendendo os cotovelos."],
+  ],
+  Costas: [
+    ["Barra fixa", "Peso corporal", "Pegada pronada, puxe o queixo acima da barra, desça controlando."],
+    ["Puxada frente", "Polia", "Puxe a barra até o peito, escápulas para baixo e para trás."],
+    ["Remada curvada", "Barra", "Tronco inclinado, puxe a barra ao abdômen mantendo a coluna neutra."],
+    ["Remada baixa", "Polia", "Puxe o triângulo ao abdômen, aperte as escápulas no fim."],
+    ["Remada unilateral", "Halter", "Apoio no banco, puxe o halter à cintura, cotovelo rente ao corpo."],
+  ],
+  Pernas: [
+    ["Agachamento livre", "Barra", "Desça até coxas paralelas, joelhos alinhados aos pés, tronco firme."],
+    ["Leg press 45º", "Máquina", "Desça controlando até 90°, empurre sem travar o joelho."],
+    ["Cadeira extensora", "Máquina", "Estenda os joelhos, segure 1s no topo, desça devagar."],
+    ["Mesa flexora", "Máquina", "Flexione os joelhos trazendo o calcanhar ao glúteo."],
+    ["Afundo", "Halteres", "Passo à frente, desça o joelho de trás, empurre com a perna da frente."],
+  ],
+  Glúteos: [
+    ["Elevação pélvica", "Barra", "Apoie as costas no banco, suba o quadril contraindo o glúteo no topo."],
+    ["Cadeira abdutora", "Máquina", "Abra as pernas contra a resistência, controle a volta."],
+    ["Coice na polia", "Polia", "Estenda o quadril para trás, contraia o glúteo, sem arquear a lombar."],
+  ],
+  Ombro: [
+    ["Desenvolvimento com halteres", "Halteres", "Empurre acima da cabeça sem travar, desça até a linha das orelhas."],
+    ["Elevação lateral", "Halteres", "Suba os braços até a linha dos ombros, cotovelo levemente flexionado."],
+    ["Elevação frontal", "Halteres", "Suba à frente até a altura dos ombros, sem balançar o tronco."],
+    ["Remada alta", "Barra", "Puxe a barra ao queixo com os cotovelos altos."],
+  ],
+  Bíceps: [
+    ["Rosca direta", "Barra", "Cotovelos fixos ao lado do corpo, suba a barra contraindo o bíceps."],
+    ["Rosca alternada", "Halteres", "Alterne os braços, gire o punho (supinação) ao subir."],
+    ["Rosca scott", "Banco Scott", "Apoie os braços no banco, suba controlando sem impulso."],
+  ],
+  Tríceps: [
+    ["Tríceps corda", "Polia", "Estenda os cotovelos abrindo a corda no fim do movimento."],
+    ["Tríceps testa", "Barra W", "Desça a barra até a testa, estenda apenas o cotovelo."],
+    ["Mergulho no banco", "Peso corporal", "Desça o corpo flexionando os cotovelos, suba estendendo."],
+  ],
+  Abdômen: [
+    ["Prancha", "Peso corporal", "Antebraços no chão, corpo reto, segure contraindo o abdômen."],
+    ["Abdominal supra", "Peso corporal", "Suba os ombros do chão contraindo o abdômen, sem puxar o pescoço."],
+    ["Elevação de pernas", "Peso corporal", "Deitado, suba as pernas estendidas até 90°, desça sem tocar o chão."],
+  ],
+  Panturrilha: [
+    ["Panturrilha em pé", "Máquina", "Suba na ponta dos pés ao máximo, desça alongando."],
+    ["Panturrilha sentado", "Máquina", "Foco no sóleo, suba e desça controlando a amplitude."],
+  ],
+  Cardio: [
+    ["Corrida na esteira", "Esteira", "Mantenha ritmo constante; ajuste inclinação conforme o objetivo."],
+    ["Bike ergométrica", "Bike", "Cadência estável, ajuste a carga para manter a FC alvo."],
+    ["Pular corda", "Corda", "Saltos curtos na ponta dos pés, punhos girando a corda."],
+    ["Remo ergômetro", "Remo", "Empurre com as pernas, puxe com as costas, retorne controlando."],
+  ],
+  "Corpo todo": [
+    ["Burpee", "Peso corporal", "Agache, prancha, flexão, salte para cima explodindo."],
+    ["Kettlebell swing", "Kettlebell", "Balanço com o quadril (não com os braços) até a altura do peito."],
+  ],
+};
+
+export const bibliotecaSeed: ExercicioBiblioteca[] = Object.entries(catalogo).flatMap(
+  ([grupo, itens]) =>
+    itens.map(([nome, equipamento, instrucoes], i): ExercicioBiblioteca => ({
+      id: `bib_${grupo}_${i}`.toLowerCase().replace(/\s+/g, ""),
+      nome,
+      grupo: grupo as GrupoMuscular,
+      equipamento,
+      instrucoes,
+      videoUrl: yt(nome),
+      criadoEm: "2026-05-01T00:00:00.000Z",
+    })),
+);
 
 export const treinosSeed: Treino[] = [
   {

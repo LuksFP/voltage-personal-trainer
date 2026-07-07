@@ -4,14 +4,25 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { CalendarIcon, DumbbellIcon, GridIcon, UsersIcon } from "./icons";
+import {
+  BookIcon,
+  CalendarIcon,
+  ChartIcon,
+  DumbbellIcon,
+  GridIcon,
+  UsersIcon,
+  WalletIcon,
+} from "./icons";
 import { ThemeToggle } from "./ThemeToggle";
 import { cx } from "./ui";
 
 const nav = [
   { href: "/", label: "Painel", icon: GridIcon },
   { href: "/alunos", label: "Alunos", icon: UsersIcon },
+  { href: "/biblioteca", label: "Biblioteca", icon: BookIcon },
   { href: "/agenda", label: "Agenda", icon: CalendarIcon },
+  { href: "/financeiro", label: "Financeiro", icon: WalletIcon },
+  { href: "/relatorios", label: "Relatórios", icon: ChartIcon },
 ];
 
 function NavLinks({ pathname, onNavigate }: { pathname: string | null; onNavigate: () => void }) {
@@ -45,7 +56,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [openMobile, setOpenMobile] = useState(false);
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[1400px]">
+    <div className="flex min-h-screen w-full max-w-[1600px]">
       {/* Sidebar desktop */}
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-line px-4 py-6 lg:flex">
         <Brand />

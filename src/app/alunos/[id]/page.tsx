@@ -8,11 +8,21 @@ import { Avatar } from "../../page";
 import { Badge, Button, Card } from "@/components/ui";
 import { Modal } from "@/components/Modal";
 import { AlunoForm, type AlunoFormValues } from "@/components/AlunoForm";
-import { parsePesoMeta } from "../page";
+import { parseDiaVencimento, parseMensalidade, parsePesoMeta } from "../page";
 import { TreinoBuilder } from "@/components/TreinoBuilder";
 import { Evolucao } from "@/components/Evolucao";
 import { ProximasSessoes } from "@/components/ProximasSessoes";
-import { ArrowLeftIcon, PencilIcon, PhoneIcon, TargetIcon, TrashIcon } from "@/components/icons";
+import { linkWhatsapp } from "@/lib/compartilhar";
+import type { Aluno } from "@/lib/types";
+import {
+  ArrowLeftIcon,
+  CopyIcon,
+  PencilIcon,
+  PhoneIcon,
+  TargetIcon,
+  TrashIcon,
+  WhatsappIcon,
+} from "@/components/icons";
 
 export default function AlunoPage() {
   const params = useParams<{ id: string }>();
@@ -42,6 +52,8 @@ export default function AlunoPage() {
       objetivo: v.objetivo || undefined,
       modalidade: v.modalidade || undefined,
       pesoMeta: parsePesoMeta(v.pesoMeta),
+      mensalidade: parseMensalidade(v.mensalidade),
+      diaVencimento: parseDiaVencimento(v.diaVencimento),
       observacoes: v.observacoes || undefined,
       ativo: v.ativo,
     });
@@ -106,6 +118,8 @@ export default function AlunoPage() {
         </Card>
       )}
 
+      <PortalAcesso aluno={aluno} />
+
       <ProximasSessoes alunoId={aluno.id} />
 
       <Evolucao alunoId={aluno.id} />
@@ -116,6 +130,63 @@ export default function AlunoPage() {
         <AlunoForm initial={aluno} onSubmit={salvarEdicao} onCancel={() => setEditOpen(false)} />
       </Modal>
     </div>
+  );
+}
+
+function PortalAcesso({ aluno }: { aluno: Aluno }) {
+  const [copiado, setCopiado] = useState(false);
+  // Link absoluto do portal. O card só monta após a hidratação do store (client),
+  // então window já existe aqui; o fallback cobre qualquer render sem window.
+  const [link] = useState(() =>
+    typeof window !== "undefined"
+      ? `${window.location.origin}/portal/${aluno.id}`
+      : `/portal/${aluno.id}`,
+  );
+
+  const copiar = async () => {
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 1800);
+    } catch {
+      /* clipboard indisponível */
+    }
+  };
+
+  const enviar = () => {
+    const primeiro = aluno.nome.split(" ")[0];
+    const texto = `Oi ${primeiro}! Este é o seu acesso ao Voltage para ver seu treino e sua agenda pelo celular: ${link}`;
+    window.open(linkWhatsapp(texto, aluno.telefone), "_blank", "noopener,noreferrer");
+  };
+
+  return (
+    <Card className="p-5">
+      <div className="flex items-start gap-3">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-surface-2 text-accent">
+          <PhoneIcon className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-display font-semibold">Portal do aluno</h2>
+          <p className="mt-0.5 text-sm text-muted">
+            {aluno.nome.split(" ")[0]} acessa o próprio treino e a agenda pelo celular, e marca os
+            treinos feitos.
+          </p>
+          <div className="mt-3 truncate rounded-lg border border-line bg-surface px-3 py-2 font-mono text-xs text-muted">
+            {link}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button variant="outline" onClick={copiar}>
+              <CopyIcon className="h-4 w-4" />
+              {copiado ? "Link copiado ✓" : "Copiar link"}
+            </Button>
+            <Button onClick={enviar}>
+              <WhatsappIcon className="h-4 w-4" />
+              Enviar no WhatsApp
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 }
 
