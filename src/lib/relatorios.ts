@@ -1,5 +1,10 @@
 import type { StoreData } from "./store";
 
+type DadosRelatorio = Pick<
+  StoreData,
+  "alunos" | "treinos" | "avaliacoes" | "sessoes" | "pagamentos"
+>;
+
 // Janela de período do relatório. "tudo" = sem corte de data.
 export type Periodo = "30d" | "90d" | "365d" | "tudo";
 
@@ -89,7 +94,7 @@ function distribuir(valores: (string | undefined)[], vazioLabel: string): Distri
 }
 
 // Últimos `n` meses (incluindo o atual) com contagem de sessões realizadas/faltas.
-function serieUltimosMeses(data: StoreData, hoje: Date, n: number): PontoMes[] {
+function serieUltimosMeses(data: DadosRelatorio, hoje: Date, n: number): PontoMes[] {
   const meses: PontoMes[] = [];
   for (let i = n - 1; i >= 0; i--) {
     const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
@@ -108,7 +113,7 @@ function serieUltimosMeses(data: StoreData, hoje: Date, n: number): PontoMes[] {
 }
 
 export function calcularRelatorio(
-  data: StoreData,
+  data: DadosRelatorio,
   periodo: Periodo,
   hoje: Date = new Date(),
 ): Relatorio {

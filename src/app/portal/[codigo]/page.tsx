@@ -3,23 +3,43 @@
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
-import type { Divisao, Treino } from "@/lib/types";
+import type { Treino } from "@/lib/types";
+import { resumoDoPacote } from "@/lib/pacotes";
+import { TreinoEmAndamento } from "@/components/portal/TreinoEmAndamento";
+import { CheckinSemanalPortal } from "@/components/portal/CheckinSemanalPortal";
+import { HabitosDiariosPortal } from "@/components/portal/HabitosDiariosPortal";
+import { RelatorioSemanalPortal } from "@/components/portal/RelatorioSemanalPortal";
+import { AnamnesePortal } from "@/components/portal/AnamnesePortal";
+import { MetasPortal } from "@/components/portal/MetasPortal";
+import { NutricaoPortal } from "@/components/portal/NutricaoPortal";
+import { ConquistasPortal } from "@/components/portal/ConquistasPortal";
+import { PortalResumo } from "@/components/portal/PortalResumo";
+import { PortalEvolucao } from "@/components/portal/PortalEvolucao";
+import { PortalHistorico } from "@/components/portal/PortalHistorico";
 import { cx } from "@/components/ui";
 import {
   CalendarIcon,
+  ChartIcon,
   CheckIcon,
-  ChevronRightIcon,
-  ClockIcon,
   DumbbellIcon,
-  PlayIcon,
+  GridIcon,
   TargetIcon,
 } from "@/components/icons";
 
-function isoLocal(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+type AbaPortal = "inicio" | "treino" | "evolucao" | "historico";
+
+const ABAS: { id: AbaPortal; label: string; icon: typeof GridIcon }[] = [
+  { id: "inicio", label: "Início", icon: GridIcon },
+  { id: "treino", label: "Treino", icon: DumbbellIcon },
+  { id: "evolucao", label: "Evolução", icon: ChartIcon },
+  { id: "historico", label: "Histórico", icon: CalendarIcon },
+];
+
+function isoLocal(data: Date): string {
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
 }
 
 function dataExtenso(iso: string): string {
@@ -32,24 +52,37 @@ function dataExtenso(iso: string): string {
 
 export default function PortalPage() {
   const params = useParams<{ codigo: string }>();
-  const { getAluno, treinosDoAluno, sessoes } = useStore();
+  const { getAluno, treinosDoAluno, sessoes, pacotesDoAluno, metasDoAluno } = useStore();
   const aluno = getAluno(params.codigo);
-
   const hoje = isoLocal(new Date());
+  const [aba, setAba] = useState<AbaPortal>("inicio");
 
   const treinoAtivo = useMemo<Treino | undefined>(() => {
     if (!aluno) return undefined;
-    const ts = treinosDoAluno(aluno.id);
-    return ts.find((t) => t.ativo) ?? ts[0];
+    const treinos = treinosDoAluno(aluno.id);
+    return treinos.find((treino) => treino.ativo) ?? treinos[0];
   }, [aluno, treinosDoAluno]);
 
   const proximas = useMemo(() => {
     if (!aluno) return [];
     return sessoes
-      .filter((s) => s.alunoId === aluno.id && s.status !== "faltou" && s.data >= hoje)
-      .sort((a, b) => a.data.localeCompare(b.data) || a.hora.localeCompare(b.hora))
+      .filter(
+        (sessao) =>
+          sessao.alunoId === aluno.id && sessao.status === "agendada" && sessao.data >= hoje,
+      )
+      .sort(
+        (a, b) => a.data.localeCompare(b.data) || a.hora.localeCompare(b.hora),
+      )
       .slice(0, 3);
   }, [aluno, sessoes, hoje]);
+  const pacotes = aluno ? pacotesDoAluno(aluno.id) : [];
+  const pacoteAtual =
+    pacotes.find((pacote) => resumoDoPacote(pacote, sessoes, hoje).status === "ativo") ??
+    pacotes[0];
+  const resumoPacote = pacoteAtual ? resumoDoPacote(pacoteAtual, sessoes, hoje) : undefined;
+  const temMetaPesoAtiva = aluno
+    ? metasDoAluno(aluno.id).some((meta) => meta.status === "ativa" && meta.tipo === "peso")
+    : false;
 
   if (!aluno) {
     return (
@@ -67,11 +100,10 @@ export default function PortalPage() {
     );
   }
 
-  const primeiro = aluno.nome.split(" ")[0];
+  const primeiroNome = aluno.nome.split(" ")[0];
 
   return (
     <div className="min-h-screen pb-16">
-      {/* Topo */}
       <header className="sticky top-0 z-10 border-b border-line bg-bg/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center justify-between px-5 py-4">
           <span className="flex items-center gap-2">
@@ -86,12 +118,11 @@ export default function PortalPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg space-y-8 px-5 py-7">
-        {/* Saudação */}
+      <main className="mx-auto max-w-lg space-y-6 px-5 py-7">
         <div>
           <p className="text-sm font-semibold uppercase tracking-widest text-accent">Olá</p>
-          <h1 className="font-display mt-1 text-4xl font-bold leading-none">{primeiro} 👋</h1>
-          {aluno.pesoMeta != null && (
+          <h1 className="font-display mt-1 text-4xl font-bold leading-none">{primeiroNome} 👋</h1>
+          {aluno.pesoMeta != null && !temMetaPesoAtiva && (
             <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1.5 text-sm font-semibold text-muted">
               <TargetIcon className="h-4 w-4 text-accent" />
               Meta de peso: {aluno.pesoMeta} kg
@@ -99,212 +130,193 @@ export default function PortalPage() {
           )}
         </div>
 
-        {/* Próximas sessões */}
-        <section>
-          <h2 className="font-display mb-3 flex items-center gap-2 text-lg font-semibold">
-            <CalendarIcon className="h-5 w-5 text-accent" />
-            Próximos treinos
-          </h2>
-          {proximas.length === 0 ? (
-            <div className="rounded-xl2 border border-line bg-surface/70 px-4 py-6 text-center text-sm text-muted">
-              Nenhum treino agendado por enquanto.
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {proximas.map((s) => (
-                <div
-                  key={s.id}
-                  className="flex items-center gap-3 rounded-xl2 border border-line bg-surface/70 p-3.5"
-                >
-                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-surface-2 text-center leading-none">
-                    <span className="font-display text-base font-bold text-accent">{s.hora}</span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold capitalize">
-                      {s.data === hoje ? "Hoje" : dataExtenso(s.data)}
+        <nav
+          className="sticky top-[65px] z-[9] grid grid-cols-4 gap-1 rounded-xl border border-line bg-bg/90 p-1.5 shadow-lg shadow-black/10 backdrop-blur-md"
+          aria-label="Seções do portal"
+        >
+          {ABAS.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setAba(item.id)}
+                className={cx(
+                  "flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-[10px] font-semibold transition-colors",
+                  aba === item.id
+                    ? "bg-volt text-ink"
+                    : "text-muted hover:bg-surface-2 hover:text-text",
+                )}
+                aria-current={aba === item.id ? "page" : undefined}
+              >
+                <Icon className="h-4 w-4" />
+                <span className="truncate">{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {aba === "inicio" && (
+          <div className="space-y-7">
+            <PortalResumo
+              alunoId={aluno.id}
+              hoje={hoje}
+              onAbrirEvolucao={() => setAba("evolucao")}
+            />
+
+            <ConquistasPortal alunoId={aluno.id} />
+
+            <MetasPortal alunoId={aluno.id} />
+
+            <NutricaoPortal alunoId={aluno.id} />
+
+            <AnamnesePortal alunoId={aluno.id} />
+
+            <RelatorioSemanalPortal alunoId={aluno.id} />
+
+            <HabitosDiariosPortal alunoId={aluno.id} hoje={hoje} />
+
+            {pacoteAtual && resumoPacote && (
+              <section className="rounded-xl2 border border-accent/25 bg-accent/8 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-accent">
+                      Seu pacote
                     </p>
-                    {s.foco && <p className="truncate text-sm text-muted">{s.foco}</p>}
+                    <h2 className="font-display mt-1 text-lg font-semibold">{pacoteAtual.nome}</h2>
+                    <p className="mt-1 text-xs text-muted">
+                      Válido até {pacoteAtual.dataValidade.split("-").reverse().join("/")}
+                    </p>
                   </div>
-                  {s.status === "realizada" && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2.5 py-1 text-xs font-semibold text-accent">
-                      <CheckIcon className="h-3.5 w-3.5" /> Feito
-                    </span>
-                  )}
+                  <div className="text-right">
+                    <p className="font-display text-3xl font-bold text-accent">{resumoPacote.restantes}</p>
+                    <p className="text-xs font-semibold text-muted">
+                      aula{resumoPacote.restantes === 1 ? "" : "s"} restante
+                      {resumoPacote.restantes === 1 ? "" : "s"}
+                    </p>
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </section>
+                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-2">
+                  <div
+                    className="h-full rounded-full bg-volt"
+                    style={{ width: `${Math.min(100, resumoPacote.percentual)}%` }}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-muted">
+                  {resumoPacote.realizadas} de {resumoPacote.contratadas} realizadas
+                  {resumoPacote.agendadasFuturas > 0
+                    ? ` · ${resumoPacote.agendadasFuturas} já agendada${resumoPacote.agendadasFuturas === 1 ? "" : "s"}`
+                    : ""}
+                </p>
+              </section>
+            )}
 
-        {/* Treino */}
-        <section>
-          <h2 className="font-display mb-3 flex items-center gap-2 text-lg font-semibold">
-            <DumbbellIcon className="h-5 w-5 text-accent" />
-            {treinoAtivo ? treinoAtivo.nome : "Seu treino"}
-          </h2>
+            <section>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h2 className="font-display flex items-center gap-2 text-lg font-semibold">
+                  <CalendarIcon className="h-5 w-5 text-accent" />
+                  Próximos treinos
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setAba("treino")}
+                  className="text-xs font-semibold text-accent"
+                >
+                  Abrir treino
+                </button>
+              </div>
+              {proximas.length === 0 ? (
+                <div className="rounded-xl2 border border-line bg-surface/70 px-4 py-6 text-center text-sm text-muted">
+                  Nenhum treino agendado por enquanto.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {proximas.map((sessao) => (
+                    <button
+                      type="button"
+                      onClick={() => setAba("treino")}
+                      key={sessao.id}
+                      className="flex w-full items-center gap-3 rounded-xl2 border border-line bg-surface/70 p-3.5 text-left transition-colors hover:border-accent/35"
+                    >
+                      <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-surface-2 text-center leading-none">
+                        <span className="font-display text-base font-bold text-accent">
+                          {sessao.hora}
+                        </span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold capitalize">
+                          {sessao.data === hoje ? "Hoje" : dataExtenso(sessao.data)}
+                        </p>
+                        {sessao.foco && <p className="truncate text-sm text-muted">{sessao.foco}</p>}
+                      </div>
+                      {sessao.status === "realizada" && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2.5 py-1 text-xs font-semibold text-accent">
+                          <CheckIcon className="h-3.5 w-3.5" /> Feito
+                        </span>
+                      )}
+                      {sessao.status === "cancelada" && (
+                        <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-semibold text-muted">
+                          Cancelada
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
 
-          {!treinoAtivo || treinoAtivo.divisoes.length === 0 ? (
-            <div className="rounded-xl2 border border-line bg-surface/70 px-4 py-8 text-center text-sm text-muted">
-              Seu personal ainda não montou seu treino. Assim que montar, aparece aqui.
+            <CheckinSemanalPortal alunoId={aluno.id} hoje={hoje} />
+          </div>
+        )}
+
+        {aba === "treino" && (
+          <section>
+            <div className="mb-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-accent">Treino em andamento</p>
+              <h2 className="font-display mt-1 flex items-center gap-2 text-2xl font-semibold">
+                <DumbbellIcon className="h-5 w-5 text-accent" />
+                {treinoAtivo ? treinoAtivo.nome : "Seu treino"}
+              </h2>
+              <p className="mt-1 text-sm text-muted">
+                Registre cada série. Seu progresso fica salvo neste aparelho até concluir.
+              </p>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {treinoAtivo.divisoes.map((d, i) => (
-                <DivisaoCard
-                  key={d.id}
-                  alunoId={aluno.id}
-                  divisao={d}
-                  hoje={hoje}
-                  aberturaInicial={i === 0}
-                />
-              ))}
-            </div>
-          )}
-        </section>
+
+            {!treinoAtivo || treinoAtivo.divisoes.length === 0 ? (
+              <div className="rounded-xl2 border border-line bg-surface/70 px-4 py-8 text-center text-sm text-muted">
+                Seu personal ainda não montou seu treino. Assim que montar, aparece aqui.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {treinoAtivo.divisoes.map((divisao, index) => (
+                  <TreinoEmAndamento
+                    key={divisao.id}
+                    alunoId={aluno.id}
+                    treinoId={treinoAtivo.id}
+                    treinoNome={treinoAtivo.nome}
+                    divisao={divisao}
+                    hoje={hoje}
+                    aberturaInicial={index === 0}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {aba === "evolucao" && (
+          <div className="space-y-7">
+            <PortalEvolucao alunoId={aluno.id} />
+            <ConquistasPortal alunoId={aluno.id} modo="catalogo" />
+          </div>
+        )}
+
+        {aba === "historico" && <PortalHistorico alunoId={aluno.id} hoje={hoje} />}
 
         <p className="pt-4 text-center text-xs text-muted">
           Feito com Voltage · fale com seu personal para dúvidas
         </p>
       </main>
-    </div>
-  );
-}
-
-function DivisaoCard({
-  alunoId,
-  divisao,
-  hoje,
-  aberturaInicial,
-}: {
-  alunoId: string;
-  divisao: Divisao;
-  hoje: string;
-  aberturaInicial: boolean;
-}) {
-  const { sessoes, addSessao, getExercicioBiblioteca } = useStore();
-  const [aberto, setAberto] = useState(aberturaInicial);
-  const [feitos, setFeitos] = useState<Set<string>>(new Set());
-
-  // Já registrou este treino hoje?
-  const concluidoHoje = sessoes.some(
-    (s) =>
-      s.alunoId === alunoId &&
-      s.data === hoje &&
-      s.status === "realizada" &&
-      s.foco === divisao.nome,
-  );
-
-  const toggle = (id: string) =>
-    setFeitos((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-
-  const total = divisao.exercicios.length;
-  const done = divisao.exercicios.filter((e) => feitos.has(e.id)).length;
-
-  const concluir = () => {
-    const agora = new Date();
-    addSessao({
-      alunoId,
-      data: hoje,
-      hora: `${String(agora.getHours()).padStart(2, "0")}:${String(agora.getMinutes()).padStart(2, "0")}`,
-      foco: divisao.nome,
-      status: "realizada",
-    });
-  };
-
-  return (
-    <div className="overflow-hidden rounded-xl2 border border-line bg-surface/70">
-      <button
-        onClick={() => setAberto((v) => !v)}
-        className="flex w-full items-center gap-3 p-4 text-left"
-      >
-        <span className="h-5 w-1.5 shrink-0 rounded-full bg-volt" />
-        <div className="min-w-0 flex-1">
-          <p className="font-semibold">{divisao.nome}</p>
-          <p className="text-xs text-muted">
-            {total} exercício{total === 1 ? "" : "s"}
-            {concluidoHoje ? " · feito hoje ✓" : done > 0 ? ` · ${done}/${total} marcados` : ""}
-          </p>
-        </div>
-        <ChevronRightIcon
-          className={cx("h-5 w-5 shrink-0 text-muted transition-transform", aberto && "rotate-90")}
-        />
-      </button>
-
-      {aberto && (
-        <div className="border-t border-line">
-          <ul className="divide-y divide-line">
-            {divisao.exercicios.map((ex) => {
-              const bib = ex.bibliotecaId ? getExercicioBiblioteca(ex.bibliotecaId) : undefined;
-              const marcado = feitos.has(ex.id);
-              return (
-                <li key={ex.id} className="flex items-start gap-3 p-4">
-                  <button
-                    onClick={() => toggle(ex.id)}
-                    className={cx(
-                      "mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md border transition-colors",
-                      marcado
-                        ? "border-volt bg-volt text-ink"
-                        : "border-line text-transparent hover:border-accent/60",
-                    )}
-                    aria-label={marcado ? "Desmarcar" : "Marcar como feito"}
-                  >
-                    <CheckIcon className="h-4 w-4" />
-                  </button>
-                  <div className="min-w-0 flex-1">
-                    <p className={cx("font-semibold", marcado && "text-muted line-through")}>
-                      {ex.nome}
-                    </p>
-                    <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-muted">
-                      <span className="font-semibold text-text">
-                        {ex.series} × {ex.repeticoes}
-                      </span>
-                      {ex.carga && <span>· {ex.carga}</span>}
-                      <span className="inline-flex items-center gap-1">
-                        · <ClockIcon className="h-3.5 w-3.5" />
-                        {ex.descanso}
-                      </span>
-                    </p>
-                    {ex.observacoes && <p className="mt-0.5 text-xs text-muted">{ex.observacoes}</p>}
-                    {bib?.videoUrl && (
-                      <a
-                        href={bib.videoUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline"
-                      >
-                        <PlayIcon className="h-3.5 w-3.5" />
-                        Como fazer
-                      </a>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-
-          <div className="p-4">
-            {concluidoHoje ? (
-              <div className="flex items-center justify-center gap-2 rounded-xl bg-accent/10 py-3 text-sm font-semibold text-accent">
-                <CheckIcon className="h-4 w-4" />
-                Treino registrado hoje
-              </div>
-            ) : (
-              <button
-                onClick={concluir}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-volt py-3 text-sm font-semibold text-ink transition-colors hover:bg-volt-strong"
-              >
-                <CheckIcon className="h-4 w-4" />
-                Concluir treino de hoje
-              </button>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

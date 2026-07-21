@@ -1,4 +1,5 @@
 import type { Aluno, Treino } from "./types";
+import { detalhesDoBloco, tituloDoBloco, unidadesDaDivisao } from "./blocos-treino";
 
 function esc(s: string): string {
   return s
@@ -24,9 +25,22 @@ export function imprimirTreino(treino: Treino, aluno?: Aluno): void {
       const linhas =
         d.exercicios.length === 0
           ? `<tr><td colspan="5" class="vazio">Sem exercícios</td></tr>`
-          : d.exercicios
-              .map(
-                (ex) => `<tr>
+          : unidadesDaDivisao(d)
+              .map((unidade) => {
+                let cabecalho = "";
+                if (unidade.bloco) {
+                  const detalhes = detalhesDoBloco(unidade.bloco);
+                  const configuracao =
+                    detalhes.length > 0
+                      ? `<span>${esc(detalhes.join(" · "))}</span>`
+                      : "";
+                  cabecalho = `<tr class="bloco"><td colspan="5">
+                      <strong>${esc(tituloDoBloco(unidade.bloco))}</strong>${configuracao}
+                    </td></tr>`;
+                }
+                const exercicios = unidade.exercicios
+                  .map(
+                    (ex) => `<tr>
                   <td class="ex">${esc(ex.nome)}${
                     ex.observacoes ? `<span class="obs">${esc(ex.observacoes)}</span>` : ""
                   }</td>
@@ -35,7 +49,10 @@ export function imprimirTreino(treino: Treino, aluno?: Aluno): void {
                   <td class="c">${esc(ex.carga || "—")}</td>
                   <td class="c">${esc(ex.descanso || "—")}</td>
                 </tr>`,
-              )
+                  )
+                  .join("");
+                return cabecalho + exercicios;
+              })
               .join("");
       return `<section class="div">
         <h2>${esc(d.nome)}</h2>
@@ -65,6 +82,9 @@ export function imprimirTreino(treino: Treino, aluno?: Aluno): void {
   td.c, th.c { text-align: center; }
   td.ex { font-weight: 600; }
   td.ex .obs { display: block; font-weight: 400; font-size: 11px; color: #777; margin-top: 2px; }
+  tr.bloco td { padding: 8px; background: #f7f8f3; border-top: 2px solid #cbd4b8; border-bottom: 1px solid #dfe5d5; color: #303728; }
+  tr.bloco strong { font-size: 11px; text-transform: uppercase; letter-spacing: .7px; }
+  tr.bloco span { margin-left: 8px; font-size: 11px; color: #68705f; }
   td.vazio { color: #999; font-style: italic; }
   footer { margin-top: 28px; font-size: 11px; color: #999; text-align: center; }
   @media print { body { margin: 12mm; } }

@@ -10,10 +10,22 @@ import { Modal } from "@/components/Modal";
 import { AlunoForm, type AlunoFormValues } from "@/components/AlunoForm";
 import { parseDiaVencimento, parseMensalidade, parsePesoMeta } from "../page";
 import { TreinoBuilder } from "@/components/TreinoBuilder";
+import { Periodizacao } from "@/components/Periodizacao";
+import { Progressao } from "@/components/Progressao";
+import { CheckinsSemanais } from "@/components/CheckinsSemanais";
 import { Evolucao } from "@/components/Evolucao";
 import { ProximasSessoes } from "@/components/ProximasSessoes";
+import { PacotesSessoes } from "@/components/PacotesSessoes";
+import { SolicitacoesSubstituicao } from "@/components/SolicitacoesSubstituicao";
+import { VideosExecucao } from "@/components/VideosExecucao";
+import { HabitosAluno } from "@/components/HabitosAluno";
+import { RelatorioSemanalAluno } from "@/components/RelatorioSemanalAluno";
+import { AnamneseAluno } from "@/components/AnamneseAluno";
+import { MetasAluno } from "@/components/MetasAluno";
+import { NutricaoAluno } from "@/components/NutricaoAluno";
+import { ConquistasAluno } from "@/components/ConquistasAluno";
 import { linkWhatsapp } from "@/lib/compartilhar";
-import type { Aluno } from "@/lib/types";
+import type { Aluno, Sessao } from "@/lib/types";
 import {
   ArrowLeftIcon,
   CopyIcon,
@@ -27,7 +39,7 @@ import {
 export default function AlunoPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { getAluno, updateAluno, removeAluno } = useStore();
+  const { getAluno, updateAluno, removeAluno, sessoes } = useStore();
   const aluno = getAluno(params.id);
 
   const [editOpen, setEditOpen] = useState(false);
@@ -120,9 +132,35 @@ export default function AlunoPage() {
 
       <PortalAcesso aluno={aluno} />
 
+      <AnamneseAluno alunoId={aluno.id} />
+
+      <MetasAluno alunoId={aluno.id} />
+
+      <NutricaoAluno alunoId={aluno.id} />
+
+      <ConquistasAluno alunoId={aluno.id} />
+
+      <RelatorioSemanalAluno alunoId={aluno.id} />
+
+      <SolicitacoesSubstituicao alunoId={aluno.id} />
+
+      <VideosExecucao alunoId={aluno.id} />
+
+      <PacotesSessoes alunoId={aluno.id} />
+
       <ProximasSessoes alunoId={aluno.id} />
 
+      <FeedbacksRecentes alunoId={aluno.id} sessoes={sessoes} />
+
+      <HabitosAluno alunoId={aluno.id} />
+
+      <CheckinsSemanais alunoId={aluno.id} />
+
       <Evolucao alunoId={aluno.id} />
+
+      <Periodizacao alunoId={aluno.id} />
+
+      <Progressao alunoId={aluno.id} />
 
       <TreinoBuilder alunoId={aluno.id} />
 
@@ -187,6 +225,65 @@ function PortalAcesso({ aluno }: { aluno: Aluno }) {
         </div>
       </div>
     </Card>
+  );
+}
+
+function FeedbacksRecentes({ alunoId, sessoes }: { alunoId: string; sessoes: Sessao[] }) {
+  const recentes = sessoes
+    .filter((s) => s.alunoId === alunoId && s.status === "realizada" && s.feedback)
+    .sort((a, b) => b.data.localeCompare(a.data) || b.hora.localeCompare(a.hora))
+    .slice(0, 4);
+
+  const data = (iso: string) =>
+    new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "short",
+    });
+
+  return (
+    <section className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-xl font-bold">Feedbacks recentes</h2>
+        {recentes.length > 0 && <Badge tone="volt">{recentes.length}</Badge>}
+      </div>
+
+      {recentes.length === 0 ? (
+        <Card className="px-5 py-8 text-center text-sm text-muted">
+          Nenhum feedback pós-treino registrado ainda.
+        </Card>
+      ) : (
+        <Card className="divide-y divide-line">
+          {recentes.map((s) => (
+            <div key={s.id} className="p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold capitalize">
+                    {data(s.data)} · {s.hora}
+                  </p>
+                  {s.foco && <p className="text-xs text-muted">{s.foco}</p>}
+                </div>
+                <div className="flex flex-wrap gap-1.5 text-xs font-semibold">
+                  <span className="rounded-full bg-surface-2 px-2.5 py-1 text-muted">
+                    Dif. {s.feedback?.dificuldade}/5
+                  </span>
+                  <span className="rounded-full bg-surface-2 px-2.5 py-1 text-muted">
+                    Energia {s.feedback?.energia}/5
+                  </span>
+                  <span className="rounded-full bg-accent/15 px-2.5 py-1 text-accent">
+                    {s.feedback?.dor}
+                  </span>
+                </div>
+              </div>
+              {s.feedback?.observacoes && (
+                <p className="mt-3 rounded-lg bg-surface-2/50 px-3 py-2 text-sm leading-relaxed text-muted">
+                  {s.feedback.observacoes}
+                </p>
+              )}
+            </div>
+          ))}
+        </Card>
+      )}
+    </section>
   );
 }
 

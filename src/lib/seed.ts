@@ -1,9 +1,12 @@
 import type {
+  AlimentoBanco,
   Aluno,
   Avaliacao,
   ExercicioBiblioteca,
   GrupoMuscular,
+  HistoricoExercicio,
   Pagamento,
+  PlanoAlimentar,
   Sessao,
   Treino,
 } from "./types";
@@ -162,13 +165,100 @@ export function sessoesSeed(): Sessao[] {
   const criadoEm = new Date().toISOString();
 
   return [
-    { id: "s1", alunoId: "a1", data: dia(0), hora: "07:00", duracaoMin: 60, foco: "Treino A — Peito/Tríceps", status: "realizada", criadoEm },
+    {
+      id: "s1",
+      alunoId: "a1",
+      data: dia(0),
+      hora: "07:00",
+      duracaoMin: 60,
+      foco: "Treino A — Peito/Tríceps",
+      status: "realizada",
+      feedback: {
+        dificuldade: 4,
+        energia: 3,
+        dor: "Leve",
+        observacoes: "Supino pesado no final, sem piora no ombro.",
+      },
+      criadoEm,
+    },
     { id: "s2", alunoId: "a5", data: dia(0), hora: "18:00", duracaoMin: 75, foco: "Pegada + core", status: "realizada", criadoEm },
     { id: "s3", alunoId: "a2", data: dia(1), hora: "06:00", duracaoMin: 50, foco: "Circuito metabólico", status: "agendada", criadoEm },
     { id: "s4", alunoId: "a1", data: dia(2), hora: "07:00", duracaoMin: 60, foco: "Treino B — Costas/Bíceps", status: "agendada", criadoEm },
     { id: "s5", alunoId: "a5", data: dia(2), hora: "18:00", duracaoMin: 75, foco: "Sparring + cardio", status: "agendada", criadoEm },
     { id: "s6", alunoId: "a2", data: dia(3), hora: "06:00", duracaoMin: 50, foco: "Full body", status: "agendada", criadoEm },
     { id: "s7", alunoId: "a1", data: dia(4), hora: "07:00", duracaoMin: 60, foco: "Treino C — Pernas/Ombro", status: "agendada", criadoEm },
+  ];
+}
+
+export function historicoExerciciosSeed(): HistoricoExercicio[] {
+  const hoje = new Date();
+  const diffSegunda = (hoje.getDay() + 6) % 7;
+  const segunda = new Date(hoje);
+  segunda.setDate(hoje.getDate() - diffSegunda);
+  const data = isoLocal(segunda);
+  const criadoEm = new Date().toISOString();
+
+  return [
+    {
+      id: "hist_s1_e1",
+      alunoId: "a1",
+      sessaoId: "s1",
+      treinoId: "t1",
+      treinoNome: "Treino ABC — Hipertrofia",
+      divisaoId: "d1",
+      divisaoNome: "A — Peito e Tríceps",
+      exercicioId: "e1",
+      nome: "Supino reto com barra",
+      formato: "resumo-legado",
+      resumoLegado: {
+        series: "4",
+        repeticoes: "8",
+        carga: "62kg",
+        descanso: "90s",
+      },
+      data,
+      criadoEm,
+    },
+    {
+      id: "hist_s1_e2",
+      alunoId: "a1",
+      sessaoId: "s1",
+      treinoId: "t1",
+      treinoNome: "Treino ABC — Hipertrofia",
+      divisaoId: "d1",
+      divisaoNome: "A — Peito e Tríceps",
+      exercicioId: "e2",
+      nome: "Supino inclinado com halteres",
+      formato: "resumo-legado",
+      resumoLegado: {
+        series: "3",
+        repeticoes: "10",
+        carga: "24kg",
+        descanso: "75s",
+      },
+      data,
+      criadoEm,
+    },
+    {
+      id: "hist_s1_e4",
+      alunoId: "a1",
+      sessaoId: "s1",
+      treinoId: "t1",
+      treinoNome: "Treino ABC — Hipertrofia",
+      divisaoId: "d1",
+      divisaoNome: "A — Peito e Tríceps",
+      exercicioId: "e4",
+      nome: "Tríceps corda",
+      formato: "resumo-legado",
+      resumoLegado: {
+        series: "4",
+        repeticoes: "12",
+        carga: "27kg",
+        descanso: "60s",
+      },
+      data,
+      criadoEm,
+    },
   ];
 }
 
@@ -362,3 +452,109 @@ export const treinosSeed: Treino[] = [
     ],
   },
 ];
+
+// Banco de alimentos: macros por porção de referência (100 g/ml, ou 1 unidade).
+// Valores aproximados de tabelas nutricionais (TACO/USDA), suficientes p/ planejar.
+export const bancoAlimentosSeed: AlimentoBanco[] = (
+  [
+    // id, nome, categoria, unidade, base, kcal, P, C, G
+    ["ab-frango", "Peito de frango grelhado", "proteina", "g", 100, 165, 31, 0, 3.6],
+    ["ab-patinho", "Patinho moído (cozido)", "proteina", "g", 100, 200, 26, 0, 10],
+    ["ab-ovo", "Ovo inteiro", "proteina", "unidade", 1, 72, 6.3, 0.4, 4.8],
+    ["ab-tilapia", "Tilápia grelhada", "proteina", "g", 100, 128, 26, 0, 2.7],
+    ["ab-salmao", "Salmão grelhado", "proteina", "g", 100, 208, 20, 0, 13],
+    ["ab-atum", "Atum em água (lata)", "proteina", "g", 100, 116, 26, 0, 1],
+    ["ab-arroz", "Arroz branco cozido", "carboidrato", "g", 100, 130, 2.7, 28, 0.3],
+    ["ab-arroz-int", "Arroz integral cozido", "carboidrato", "g", 100, 124, 2.6, 26, 1],
+    ["ab-feijao", "Feijão carioca cozido", "carboidrato", "g", 100, 76, 4.8, 13.6, 0.5],
+    ["ab-batata-doce", "Batata-doce cozida", "carboidrato", "g", 100, 86, 1.6, 20, 0.1],
+    ["ab-batata", "Batata inglesa cozida", "carboidrato", "g", 100, 86, 1.7, 20, 0.1],
+    ["ab-macarrao", "Macarrão cozido", "carboidrato", "g", 100, 158, 5.8, 31, 0.9],
+    ["ab-aveia", "Aveia em flocos", "carboidrato", "g", 100, 389, 17, 66, 7],
+    ["ab-pao", "Pão integral", "carboidrato", "g", 100, 247, 13, 41, 3.4],
+    ["ab-tapioca", "Tapioca (goma)", "carboidrato", "g", 100, 358, 0, 89, 0],
+    ["ab-cuscuz", "Cuscuz de milho", "carboidrato", "g", 100, 112, 3.8, 23, 0.6],
+    ["ab-banana", "Banana", "fruta", "g", 100, 89, 1.1, 23, 0.3],
+    ["ab-maca", "Maçã", "fruta", "g", 100, 52, 0.3, 14, 0.2],
+    ["ab-brocolis", "Brócolis cozido", "vegetal", "g", 100, 35, 2.4, 7, 0.4],
+    ["ab-leite", "Leite integral", "laticinio", "ml", 100, 61, 3.2, 4.8, 3.3],
+    ["ab-iogurte", "Iogurte natural integral", "laticinio", "g", 100, 61, 3.5, 4.7, 3.3],
+    ["ab-queijo-minas", "Queijo minas frescal", "laticinio", "g", 100, 264, 17, 3, 20],
+    ["ab-requeijao", "Requeijão", "laticinio", "g", 100, 264, 10, 4, 23],
+    ["ab-pasta-amendoim", "Pasta de amendoim", "gordura", "g", 100, 588, 25, 20, 50],
+    ["ab-castanha", "Castanha-do-pará", "gordura", "g", 100, 656, 14, 12, 66],
+    ["ab-azeite", "Azeite de oliva", "gordura", "ml", 100, 884, 0, 0, 100],
+    ["ab-whey", "Whey protein", "suplemento", "g", 100, 400, 80, 8, 6],
+    ["ab-mel", "Mel", "outro", "g", 100, 304, 0.3, 82, 0],
+  ] as const
+).map(([id, nome, categoria, unidade, base, kcal, proteinas, carboidratos, gorduras]) => ({
+  id,
+  nome,
+  categoria,
+  unidade,
+  base,
+  kcal,
+  proteinas,
+  carboidratos,
+  gorduras,
+  criadoEm: "2026-05-01T10:00:00.000Z",
+}));
+
+export function planosAlimentaresSeed(): PlanoAlimentar[] {
+  return [
+    {
+      id: "plano-seed-1",
+      alunoId: "a1",
+      titulo: "Hipertrofia — superávit leve",
+      objetivo: "Ganho de massa mantendo definição, ~300 kcal acima da manutenção.",
+      status: "ativo",
+      metas: { calorias: 2700, proteinas: 165, carboidratos: 320, gorduras: 75 },
+      aguaLitros: 3.5,
+      refeicoes: [
+        {
+          id: "ref-seed-1",
+          nome: "Café da manhã",
+          horario: "07:30",
+          alimentos: [
+            { id: "alim-seed-1", nome: "Ovo inteiro", quantidade: "3 un", bancoId: "ab-ovo", quantidadeNum: 3 },
+            { id: "alim-seed-2", nome: "Aveia em flocos", quantidade: "60 g", bancoId: "ab-aveia", quantidadeNum: 60 },
+            { id: "alim-seed-3", nome: "Banana", quantidade: "100 g", bancoId: "ab-banana", quantidadeNum: 100 },
+          ],
+        },
+        {
+          id: "ref-seed-2",
+          nome: "Almoço",
+          horario: "12:30",
+          alimentos: [
+            { id: "alim-seed-4", nome: "Arroz branco cozido", quantidade: "150 g", bancoId: "ab-arroz", quantidadeNum: 150 },
+            { id: "alim-seed-5", nome: "Peito de frango grelhado", quantidade: "180 g", bancoId: "ab-frango", quantidadeNum: 180 },
+            { id: "alim-seed-6", nome: "Feijão carioca cozido", quantidade: "80 g", bancoId: "ab-feijao", quantidadeNum: 80 },
+            { id: "alim-seed-7", nome: "Salada à vontade", quantidade: "livre", observacao: "Priorizar folhas verdes." },
+          ],
+        },
+        {
+          id: "ref-seed-3",
+          nome: "Pré-treino",
+          horario: "16:30",
+          alimentos: [
+            { id: "alim-seed-8", nome: "Pão integral", quantidade: "50 g", bancoId: "ab-pao", quantidadeNum: 50 },
+            { id: "alim-seed-9", nome: "Pasta de amendoim", quantidade: "15 g", bancoId: "ab-pasta-amendoim", quantidadeNum: 15 },
+          ],
+        },
+        {
+          id: "ref-seed-4",
+          nome: "Pós-treino / Jantar",
+          horario: "20:00",
+          alimentos: [
+            { id: "alim-seed-10", nome: "Batata-doce cozida", quantidade: "200 g", bancoId: "ab-batata-doce", quantidadeNum: 200 },
+            { id: "alim-seed-11", nome: "Patinho moído (cozido)", quantidade: "150 g", bancoId: "ab-patinho", quantidadeNum: 150 },
+            { id: "alim-seed-12", nome: "Whey protein", quantidade: "30 g", bancoId: "ab-whey", quantidadeNum: 30, observacao: "Caso não bata a proteína do dia." },
+          ],
+        },
+      ],
+      observacoes: "Refeição livre 1x na semana. Ajustar carboidrato do pré-treino conforme energia.",
+      criadoEm: "2026-06-01T10:00:00.000Z",
+      atualizadoEm: "2026-06-20T09:00:00.000Z",
+    },
+  ];
+}

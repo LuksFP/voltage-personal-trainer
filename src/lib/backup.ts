@@ -1,11 +1,13 @@
 import type { StoreData } from "./store";
+import { CURRENT_SCHEMA_VERSION, migrarStoreData } from "./persistencia";
 
 const APP = "voltage";
-const VERSAO = 1;
+const FORMATO_VERSAO = 2;
 
 export interface Backup {
   app: typeof APP;
-  versao: number;
+  formatoVersao: number;
+  schemaVersion: number;
   exportadoEm: string;
   dados: StoreData;
 }
@@ -14,7 +16,8 @@ export interface Backup {
 export function montarBackup(dados: StoreData): string {
   const backup: Backup = {
     app: APP,
-    versao: VERSAO,
+    formatoVersao: FORMATO_VERSAO,
+    schemaVersion: CURRENT_SCHEMA_VERSION,
     exportadoEm: new Date().toISOString(),
     dados,
   };
@@ -38,24 +41,46 @@ export function parseBackup(texto: string): StoreData {
   }
   const raw = obj as Record<string, unknown>;
 
-  // Aceita tanto o formato com envelope { app, dados } quanto o objeto de dados cru.
-  const dados = (raw.dados ?? raw) as Record<string, unknown>;
+  if (raw.app !== undefined && raw.app !== APP) {
+    throw new Error("Este arquivo não é um backup do Voltage.");
+  }
 
-  const arr = (v: unknown) => (Array.isArray(v) ? v : null);
-  const alunos = arr(dados.alunos);
-  const treinos = arr(dados.treinos);
-  if (!alunos || !treinos) {
+  // Aceita tanto o formato com envelope { app, dados } quanto o objeto de dados cru.
+  const dados = raw.dados ?? raw;
+  if (
+    typeof dados !== "object" ||
+    dados === null ||
+    !Array.isArray((dados as Record<string, unknown>).alunos) ||
+    !Array.isArray((dados as Record<string, unknown>).treinos)
+  ) {
     throw new Error("Backup não contém 'alunos' e 'treinos'.");
   }
 
-  return {
-    alunos: alunos as StoreData["alunos"],
-    treinos: treinos as StoreData["treinos"],
-    avaliacoes: (arr(dados.avaliacoes) ?? []) as StoreData["avaliacoes"],
-    sessoes: (arr(dados.sessoes) ?? []) as StoreData["sessoes"],
-    pagamentos: (arr(dados.pagamentos) ?? []) as StoreData["pagamentos"],
-    biblioteca: (arr(dados.biblioteca) ?? []) as StoreData["biblioteca"],
-  };
+  return migrarStoreData(dados, {
+    schemaVersion: CURRENT_SCHEMA_VERSION,
+    alunos: [],
+    interessados: [],
+    anamneses: [],
+    metasAluno: [],
+    treinos: [],
+    avaliacoes: [],
+    sessoes: [],
+    pagamentos: [],
+    biblioteca: [],
+    historicoExercicios: [],
+    templatesTreino: [],
+    programasTreino: [],
+    sugestoesProgressao: [],
+    checkinsSemanais: [],
+    lembretesWhatsApp: [],
+    pacotesSessoes: [],
+    solicitacoesSubstituicao: [],
+    videosExecucao: [],
+    configuracoesHabitos: [],
+    registrosHabitos: [],
+    planosAlimentares: [],
+    bancoAlimentos: [],
+  });
 }
 
 const LAST_BACKUP_KEY = "pt.lastBackup.v1";

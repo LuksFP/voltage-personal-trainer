@@ -2,23 +2,33 @@
 
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
-import type { Exercicio, GrupoMuscular } from "@/lib/types";
+import type { Exercicio, GrupoMuscular, HistoricoExercicio } from "@/lib/types";
 import { GRUPOS_MUSCULARES } from "@/lib/types";
+import { resumoDaExecucao } from "@/lib/historico-exercicios";
 import { Button, Field, Input, Select, Textarea } from "./ui";
 import { PlayIcon } from "./icons";
 
 export type ExercicioValues = Omit<Exercicio, "id">;
 
+function dataCurta(iso: string): string {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+  });
+}
+
 export function ExercicioForm({
   initial,
+  alunoId,
   onSubmit,
   onCancel,
 }: {
   initial?: Exercicio;
+  alunoId?: string;
   onSubmit: (v: ExercicioValues) => void;
   onCancel: () => void;
 }) {
-  const { biblioteca, getExercicioBiblioteca } = useStore();
+  const { biblioteca, getExercicioBiblioteca, ultimoHistoricoExercicio } = useStore();
 
   const [v, setV] = useState<ExercicioValues>({
     nome: initial?.nome ?? "",
@@ -44,11 +54,31 @@ export function ExercicioForm({
   const set = <K extends keyof ExercicioValues>(k: K, val: ExercicioValues[K]) =>
     setV((p) => ({ ...p, [k]: val }));
 
+  const aplicarUltimaExecucao = (
+    base: ExercicioValues,
+    ultima: HistoricoExercicio,
+  ): ExercicioValues => {
+    const resumo = resumoDaExecucao(ultima);
+    return {
+      ...base,
+      series: resumo.series || base.series,
+      repeticoes: resumo.repeticoes || base.repeticoes,
+      carga: resumo.carga || base.carga,
+      descanso: resumo.descanso || base.descanso,
+    };
+  };
+
   // Ao escolher da biblioteca, preenche nome e vincula a referência.
   const escolherDaBiblioteca = (id: string) => {
     const item = getExercicioBiblioteca(id);
     if (!item) return;
-    setV((p) => ({ ...p, nome: item.nome, bibliotecaId: id }));
+    const ultima = alunoId
+      ? ultimoHistoricoExercicio(alunoId, { nome: item.nome, bibliotecaId: id })
+      : undefined;
+    setV((p) => {
+      const base = { ...p, nome: item.nome, bibliotecaId: id };
+      return !initial && ultima ? aplicarUltimaExecucao(base, ultima) : base;
+    });
   };
 
   // Editar o nome manualmente desvincula se não bater mais com o item referenciado.
@@ -60,6 +90,11 @@ export function ExercicioForm({
     });
 
   const vinculado = v.bibliotecaId ? getExercicioBiblioteca(v.bibliotecaId) : undefined;
+  const ultimaExecucao =
+    alunoId && v.nome.trim().length > 0
+      ? ultimoHistoricoExercicio(alunoId, { nome: v.nome, bibliotecaId: v.bibliotecaId })
+      : undefined;
+  const resumoUltimaExecucao = ultimaExecucao ? resumoDaExecucao(ultimaExecucao) : undefined;
   const canSubmit = v.nome.trim().length >= 2;
 
   return (
@@ -129,6 +164,34 @@ export function ExercicioForm({
           <Input value={v.descanso} onChange={(e) => set("descanso", e.target.value)} placeholder="90s" />
         </Field>
       </div>
+
+      {ultimaExecucao && resumoUltimaExecucao && (
+        <div className="rounded-xl border border-accent/30 bg-accent/5 p-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-accent">
+                Último treino
+              </p>
+              <p className="mt-1 text-sm font-semibold">
+                {resumoUltimaExecucao.series}×{resumoUltimaExecucao.repeticoes}
+                {resumoUltimaExecucao.carga ? ` · ${resumoUltimaExecucao.carga}` : ""} ·{" "}
+                {dataCurta(ultimaExecucao.data)}
+              </p>
+              {ultimaExecucao.divisaoNome && (
+                <p className="text-xs text-muted">{ultimaExecucao.divisaoNome}</p>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="self-start !px-3 !py-2 text-xs sm:self-center"
+              onClick={() => setV((p) => aplicarUltimaExecucao(p, ultimaExecucao))}
+            >
+              Usar valores
+            </Button>
+          </div>
+        </div>
+      )}
 
       <Field label="Observações">
         <Textarea

@@ -23,6 +23,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Lê a preferência salva na montagem (o script inline no <head> já evitou o flash)
   useEffect(() => {
     const salvo = (localStorage.getItem(THEME_KEY) as Tema | null) ?? "dark";
+    // Hidratação inicial do localStorage no client, depois do render SSR-safe.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTema(salvo);
     aplicar(salvo);
   }, []);

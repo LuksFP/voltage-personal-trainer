@@ -7,6 +7,8 @@ import type { Sessao, StatusSessao } from "@/lib/types";
 import { Badge, Button, Card } from "@/components/ui";
 import { Modal } from "@/components/Modal";
 import { SessaoForm, type SessaoFormPayload } from "@/components/SessaoForm";
+import { CancelarSessaoForm } from "@/components/CancelarSessaoForm";
+import { conflitosDaSessao } from "@/lib/agenda";
 import {
   CalendarIcon,
   CheckIcon,
@@ -41,11 +43,22 @@ function addDays(d: Date, n: number): Date {
 const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
 export default function AgendaPage() {
-  const { sessoes, alunos, addSessao, updateSessao, removeSessao } = useStore();
+  const {
+    sessoes,
+    alunos,
+    pacotesSessoes,
+    updateSessao,
+    removeSessao,
+    agendarSessoes,
+    updateSessaoRecorrente,
+    cancelarSessao,
+  } = useStore();
   const [weekOffset, setWeekOffset] = useState(0);
   const [formOpen, setFormOpen] = useState(false);
   const [editando, setEditando] = useState<Sessao | null>(null);
+  const [cancelando, setCancelando] = useState<Sessao | null>(null);
   const [dataPadrao, setDataPadrao] = useState<string | undefined>();
+  const [erro, setErro] = useState<string | null>(null);
 
   const hojeIso = isoLocal(new Date());
   const segunda = useMemo(() => addDays(mondayOf(new Date()), weekOffset * 7), [weekOffset]);
@@ -71,6 +84,13 @@ export default function AgendaPage() {
 
   const daSemana = dias.flatMap((d) => d.sessoes);
   const realizadas = daSemana.filter((s) => s.status === "realizada").length;
+  const canceladas = daSemana.filter((s) => s.status === "cancelada").length;
+  const agendadas = daSemana.filter((s) => s.status === "agendada").length;
+  const idsComConflito = new Set(
+    sessoes.flatMap((sessao) =>
+      conflitosDaSessao(sessao, sessoes).flatMap((conflitante) => [sessao.id, conflitante.id]),
+    ),
+  );
 
   const rotuloSemana = `${segunda.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })} – ${addDays(
     segunda,
@@ -97,16 +117,47 @@ export default function AgendaPage() {
   };
 
   const salvar = (v: SessaoFormPayload) => {
-    if (editando) updateSessao(editando.id, v);
-    else addSessao(v);
+    const {
+      recorrenciaSemanas,
+      escopoRecorrencia,
+      permitirConflito,
+      ...sessao
+    } = v;
+    if (editando) {
+      updateSessaoRecorrente(
+        editando.id,
+        sessao,
+        escopoRecorrencia,
+        permitirConflito,
+      );
+    } else {
+      agendarSessoes(sessao, {
+        semanas: recorrenciaSemanas,
+        permitirConflito,
+      });
+    }
     fechar();
   };
 
-  const marcar = (s: Sessao, status: StatusSessao) =>
-    updateSessao(s.id, { status: s.status === status ? "agendada" : status });
+  const marcar = (s: Sessao, status: StatusSessao) => {
+    try {
+      setErro(null);
+      updateSessao(s.id, { status: s.status === status ? "agendada" : status });
+    } catch (error) {
+      setErro(error instanceof Error ? error.message : "Não foi possível atualizar a sessão.");
+    }
+  };
 
   const excluir = (s: Sessao) => {
     if (confirm(`Excluir a sessão de ${nomeAluno(s.alunoId)} às ${s.hora}?`)) removeSessao(s.id);
+  };
+
+  const confirmarCancelamento = (
+    sessao: Sessao,
+    opcoes: Parameters<typeof cancelarSessao>[1],
+  ) => {
+    cancelarSessao(sessao.id, opcoes);
+    setCancelando(null);
   };
 
   return (
@@ -118,8 +169,9 @@ export default function AgendaPage() {
             {daSemana.length} sessõe{daSemana.length === 1 ? "" : "s"} na semana
           </h1>
           <p className="mt-1 text-sm text-muted">
-            {realizadas} realizada{realizadas === 1 ? "" : "s"} · {daSemana.length - realizadas}{" "}
-            em aberto
+            {realizadas} realizada{realizadas === 1 ? "" : "s"} · {agendadas} agendada
+            {agendadas === 1 ? "" : "s"}
+            {canceladas > 0 ? ` · ${canceladas} cancelada${canceladas === 1 ? "" : "s"}` : ""}
           </p>
         </div>
         <Button onClick={() => abrirNova()}>
@@ -127,6 +179,12 @@ export default function AgendaPage() {
           Nova sessão
         </Button>
       </header>
+
+      {erro && (
+        <p role="alert" className="rounded-xl bg-danger/10 px-4 py-3 text-sm font-semibold text-danger">
+          {erro}
+        </p>
+      )}
 
       {/* Navegação da semana */}
       <div className="flex items-center justify-between rounded-xl border border-line bg-surface p-1.5">
@@ -199,9 +257,16 @@ export default function AgendaPage() {
                     sessao={s}
                     nome={nomeAluno(s.alunoId)}
                     modalidade={modalidadeAluno(s.alunoId)}
+                    pacote={
+                      s.pacoteId
+                        ? pacotesSessoes.find((pacote) => pacote.id === s.pacoteId)?.nome
+                        : undefined
+                    }
                     onMarcar={marcar}
                     onEditar={abrirEdicao}
+                    onCancelar={setCancelando}
                     onExcluir={excluir}
+                    temConflito={idsComConflito.has(s.id)}
                   />
                 ))
               )}
@@ -233,6 +298,20 @@ export default function AgendaPage() {
           onCancel={fechar}
         />
       </Modal>
+
+      <Modal
+        open={cancelando !== null}
+        onClose={() => setCancelando(null)}
+        title="Cancelar ou repor sessão"
+      >
+        {cancelando && (
+          <CancelarSessaoForm
+            sessao={cancelando}
+            onSubmit={(opcoes) => confirmarCancelamento(cancelando, opcoes)}
+            onCancel={() => setCancelando(null)}
+          />
+        )}
+      </Modal>
     </div>
   );
 }
@@ -241,22 +320,32 @@ function SessaoCard({
   sessao,
   nome,
   modalidade,
+  pacote,
   onMarcar,
   onEditar,
+  onCancelar,
   onExcluir,
+  temConflito,
 }: {
   sessao: Sessao;
   nome: string;
   modalidade?: string;
+  pacote?: string;
   onMarcar: (s: Sessao, status: StatusSessao) => void;
   onEditar: (s: Sessao) => void;
+  onCancelar: (s: Sessao) => void;
   onExcluir: (s: Sessao) => void;
+  temConflito: boolean;
 }) {
   const borda =
-    sessao.status === "realizada"
+    temConflito
+      ? "border-orange-500/55"
+      : sessao.status === "realizada"
       ? "border-accent/40"
       : sessao.status === "faltou"
         ? "border-danger/40 opacity-70"
+        : sessao.status === "cancelada"
+          ? "border-line opacity-55"
         : "border-line";
 
   return (
@@ -268,6 +357,7 @@ function SessaoCard({
         </span>
         {sessao.status === "realizada" && <Badge tone="volt">Feito</Badge>}
         {sessao.status === "faltou" && <Badge tone="off">Faltou</Badge>}
+        {sessao.status === "cancelada" && <Badge tone="neutral">Cancelada</Badge>}
       </div>
 
       <p className="mt-1 truncate text-sm font-semibold">{nome}</p>
@@ -279,40 +369,84 @@ function SessaoCard({
       {sessao.duracaoMin != null && (
         <p className="text-xs text-muted/70">{sessao.duracaoMin} min</p>
       )}
+      <div className="mt-1 flex flex-wrap gap-1">
+        {sessao.recorrenciaId && (
+          <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-muted">
+            Semanal · #{sessao.recorrenciaOrdem}
+          </span>
+        )}
+        {sessao.origemReposicaoId && (
+          <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-accent">
+            Reposição
+          </span>
+        )}
+        {sessao.pacoteId && (
+          <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-accent">
+            {pacote ?? "Pacote"}
+          </span>
+        )}
+        {temConflito && (
+          <span className="rounded-full bg-orange-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-orange-400">
+            Conflito
+          </span>
+        )}
+      </div>
+      {sessao.status === "cancelada" && sessao.motivoCancelamento && (
+        <p className="mt-1 line-clamp-2 text-[10px] text-muted">{sessao.motivoCancelamento}</p>
+      )}
+      {sessao.status === "cancelada" && sessao.reposicaoSessaoId && (
+        <p className="mt-1 text-[10px] font-semibold text-accent">Reposição agendada</p>
+      )}
 
       <div className="mt-2 flex items-center gap-1 border-t border-line/60 pt-2">
-        <button
-          onClick={() => onMarcar(sessao, "realizada")}
-          className={`grid h-6 w-6 place-items-center rounded-md transition-colors ${
-            sessao.status === "realizada"
-              ? "bg-volt text-ink"
-              : "text-muted hover:bg-surface-2 hover:text-accent"
-          }`}
-          aria-label="Marcar como realizada"
-          title="Realizada"
-        >
-          <CheckIcon className="h-4 w-4" />
-        </button>
-        <button
-          onClick={() => onMarcar(sessao, "faltou")}
-          className={`grid h-6 w-6 place-items-center rounded-md transition-colors ${
-            sessao.status === "faltou"
-              ? "bg-danger/20 text-danger"
-              : "text-muted hover:bg-surface-2 hover:text-danger"
-          }`}
-          aria-label="Marcar falta"
-          title="Faltou"
-        >
-          <XIcon className="h-4 w-4" />
-        </button>
+        {sessao.status !== "cancelada" && (
+          <>
+            <button
+              onClick={() => onMarcar(sessao, "realizada")}
+              className={`grid h-6 w-6 place-items-center rounded-md transition-colors ${
+                sessao.status === "realizada"
+                  ? "bg-volt text-ink"
+                  : "text-muted hover:bg-surface-2 hover:text-accent"
+              }`}
+              aria-label="Marcar como realizada"
+              title="Realizada"
+            >
+              <CheckIcon className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => onMarcar(sessao, "faltou")}
+              className={`grid h-6 w-6 place-items-center rounded-md transition-colors ${
+                sessao.status === "faltou"
+                  ? "bg-danger/20 text-danger"
+                  : "text-muted hover:bg-surface-2 hover:text-danger"
+              }`}
+              aria-label="Marcar falta"
+              title="Faltou"
+            >
+              <XIcon className="h-4 w-4" />
+            </button>
+          </>
+        )}
         <div className="ml-auto flex items-center gap-1">
-          <button
-            onClick={() => onEditar(sessao)}
-            className="grid h-6 w-6 place-items-center rounded-md text-muted hover:bg-surface-2 hover:text-text"
-            aria-label="Editar sessão"
-          >
-            <PencilIcon className="h-3.5 w-3.5" />
-          </button>
+          {sessao.status !== "cancelada" && (
+            <button
+              onClick={() => onEditar(sessao)}
+              className="grid h-6 w-6 place-items-center rounded-md text-muted hover:bg-surface-2 hover:text-text"
+              aria-label="Editar sessão"
+            >
+              <PencilIcon className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {sessao.status === "agendada" && (
+            <button
+              onClick={() => onCancelar(sessao)}
+              className="grid h-6 w-6 place-items-center rounded-md text-muted hover:bg-danger/10 hover:text-danger"
+              aria-label="Cancelar ou repor sessão"
+              title="Cancelar ou repor"
+            >
+              <CalendarIcon className="h-3.5 w-3.5" />
+            </button>
+          )}
           <button
             onClick={() => onExcluir(sessao)}
             className="grid h-6 w-6 place-items-center rounded-md text-muted hover:bg-surface-2 hover:text-danger"

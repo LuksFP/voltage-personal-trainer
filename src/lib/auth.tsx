@@ -52,7 +52,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(SESSION_KEY);
-      if (raw) setPersonal(JSON.parse(raw) as Personal);
+      if (raw) {
+        // Hidratação inicial do localStorage no client, depois do render SSR-safe.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setPersonal(JSON.parse(raw) as Personal);
+      }
     } catch {
       /* ignora */
     }

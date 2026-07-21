@@ -7,6 +7,7 @@ import { calcularRelatorio, PERIODOS, type Periodo, type RankItem } from "@/lib/
 import { formatBRL } from "@/lib/pagamentos";
 import { BarChart } from "@/components/BarChart";
 import { LineChart } from "@/components/LineChart";
+import { ResumoRelatoriosSemanais } from "@/components/ResumoRelatoriosSemanais";
 import { Badge, Card, cx } from "@/components/ui";
 import { Avatar } from "@/app/page";
 import {
@@ -21,12 +22,16 @@ import {
 } from "@/components/icons";
 
 export default function RelatoriosPage() {
-  const { alunos, treinos, avaliacoes, sessoes, pagamentos, biblioteca } = useStore();
+  const { alunos, treinos, avaliacoes, sessoes, pagamentos } = useStore();
   const [periodo, setPeriodo] = useState<Periodo>("90d");
 
   const r = useMemo(
-    () => calcularRelatorio({ alunos, treinos, avaliacoes, sessoes, pagamentos, biblioteca }, periodo),
-    [alunos, treinos, avaliacoes, sessoes, pagamentos, biblioteca, periodo],
+    () =>
+      calcularRelatorio(
+        { alunos, treinos, avaliacoes, sessoes, pagamentos },
+        periodo,
+      ),
+    [alunos, treinos, avaliacoes, sessoes, pagamentos, periodo],
   );
 
   const labelPeriodo = PERIODOS.find((p) => p.valor === periodo)?.label.toLowerCase();
@@ -59,6 +64,8 @@ export default function RelatoriosPage() {
           ))}
         </div>
       </header>
+
+      <ResumoRelatoriosSemanais />
 
       {semDados ? (
         <Card className="px-6 py-16 text-center">

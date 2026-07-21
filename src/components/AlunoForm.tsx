@@ -46,10 +46,12 @@ export function AlunoForm({
   initial,
   onSubmit,
   onCancel,
+  submitLabel,
 }: {
-  initial?: Aluno;
+  initial?: Partial<Aluno>;
   onSubmit: (v: AlunoFormValues) => void;
   onCancel: () => void;
+  submitLabel?: string;
 }) {
   const [v, setV] = useState<AlunoFormValues>({
     nome: initial?.nome ?? "",
@@ -190,7 +192,7 @@ export function AlunoForm({
           Cancelar
         </Button>
         <Button type="submit" disabled={!canSubmit}>
-          {initial ? "Salvar alterações" : "Cadastrar aluno"}
+          {submitLabel ?? (initial ? "Salvar alterações" : "Cadastrar aluno")}
         </Button>
       </div>
     </form>

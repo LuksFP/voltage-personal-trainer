@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { ultimoBackup } from "@/lib/backup";
-import { Badge, Card } from "@/components/ui";
+import { calcularAlertasPersonal, type AlertaPersonal } from "@/lib/alertas";
+import { Badge, Card, cx } from "@/components/ui";
 import {
   CalendarIcon,
   ChartIcon,
@@ -12,9 +13,13 @@ import {
   ClockIcon,
   DownloadIcon,
   DumbbellIcon,
+  TargetIcon,
   UsersIcon,
   XIcon,
 } from "@/components/icons";
+
+const INTERVALOS_SEM_TREINO = [7, 14, 30] as const;
+type IntervaloSemTreino = (typeof INTERVALOS_SEM_TREINO)[number];
 
 function isoLocal(d: Date): string {
   const y = d.getFullYear();
@@ -24,7 +29,8 @@ function isoLocal(d: Date): string {
 }
 
 export default function DashboardPage() {
-  const { alunos, treinos, sessoes, avaliacoes } = useStore();
+  const { alunos, treinos, sessoes, avaliacoes, historicoExercicios } = useStore();
+  const [diasSemTreino, setDiasSemTreino] = useState<IntervaloSemTreino>(14);
 
   const ativos = alunos.filter((a) => a.ativo);
   const hojeIso = isoLocal(new Date());
@@ -51,10 +57,20 @@ export default function DashboardPage() {
   })();
   const maxModalidade = Math.max(1, ...porModalidade.map((m) => m.qtd));
 
-  // Alunos ativos sem nenhuma planilha ativa.
-  const semTreino = ativos.filter(
-    (a) => !treinos.some((t) => t.alunoId === a.id && t.ativo),
+  const alertas = useMemo(
+    () =>
+      calcularAlertasPersonal(
+        { alunos, treinos, sessoes, historicoExercicios },
+        { diasSemTreino, diasFeedback: 14, diasEvolucao: 45 },
+      ),
+    [alunos, treinos, sessoes, historicoExercicios, diasSemTreino],
   );
+  const totalAlertas =
+    alertas.semTreino.length +
+    alertas.semPresenca.length +
+    alertas.feedbackRuim.length +
+    alertas.dor.length +
+    alertas.semEvolucao.length;
 
   const recentes = [...alunos]
     .sort((a, b) => +new Date(b.criadoEm) - +new Date(a.criadoEm))
@@ -134,6 +150,71 @@ export default function DashboardPage() {
         />
       </div>
 
+      <section>
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="font-display text-xl font-semibold">Alertas do personal</h2>
+              {totalAlertas > 0 ? (
+                <Badge tone="off">{totalAlertas} alerta{totalAlertas === 1 ? "" : "s"}</Badge>
+              ) : (
+                <Badge tone="volt">Tudo em dia</Badge>
+              )}
+            </div>
+            <p className="mt-1 text-sm text-muted">
+              Feedback e dor consideram os últimos 14 dias. Evolução de carga considera 45 dias.
+            </p>
+          </div>
+          <div className="inline-flex self-start rounded-xl border border-line bg-surface p-1 text-sm font-semibold">
+            {INTERVALOS_SEM_TREINO.map((dias) => (
+              <button
+                key={dias}
+                onClick={() => setDiasSemTreino(dias)}
+                className={cx(
+                  "rounded-lg px-3 py-1.5 transition-colors",
+                  diasSemTreino === dias ? "bg-volt text-ink" : "text-muted hover:text-text",
+                )}
+              >
+                {dias}d
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <AlertaCard
+            titulo="Sem treino ativo"
+            icon={<DumbbellIcon className="h-4 w-4" />}
+            itens={alertas.semTreino}
+            vazio="Todos os ativos têm planilha."
+          />
+          <AlertaCard
+            titulo={`Sem treinar há ${diasSemTreino}d`}
+            icon={<ClockIcon className="h-4 w-4" />}
+            itens={alertas.semPresenca}
+            vazio="Frequência em dia."
+          />
+          <AlertaCard
+            titulo="Feedback ruim"
+            icon={<XIcon className="h-4 w-4" />}
+            itens={alertas.feedbackRuim}
+            vazio="Sem feedback crítico."
+          />
+          <AlertaCard
+            titulo="Dor moderada/forte"
+            icon={<TargetIcon className="h-4 w-4" />}
+            itens={alertas.dor}
+            vazio="Sem dor relevante."
+          />
+          <AlertaCard
+            titulo="Carga parada"
+            icon={<ChartIcon className="h-4 w-4" />}
+            itens={alertas.semEvolucao}
+            vazio="Sem alerta de carga."
+          />
+        </div>
+      </section>
+
       {/* Agenda de hoje + Por modalidade */}
       <div className="grid gap-6 lg:grid-cols-2">
         <section>
@@ -165,6 +246,7 @@ export default function DashboardPage() {
                   {s.status === "realizada" && <Badge tone="volt">Feito</Badge>}
                   {s.status === "faltou" && <Badge tone="off">Faltou</Badge>}
                   {s.status === "agendada" && <Badge tone="neutral">Agendada</Badge>}
+                  {s.status === "cancelada" && <Badge tone="neutral">Cancelada</Badge>}
                 </Card>
               ))}
             </div>
@@ -207,32 +289,6 @@ export default function DashboardPage() {
         </section>
       </div>
 
-      {/* Precisa de atenção: ativos sem planilha */}
-      {semTreino.length > 0 && (
-        <section>
-          <div className="mb-4 flex items-center gap-2">
-            <h2 className="font-display text-xl font-semibold">Precisa de atenção</h2>
-            <Badge tone="off">{semTreino.length} sem treino</Badge>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {semTreino.map((a) => (
-              <Link key={a.id} href={`/alunos/${a.id}`}>
-                <Card className="flex items-center gap-4 p-4 transition-colors hover:border-danger/40">
-                  <Avatar nome={a.nome} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{a.nome}</p>
-                    <p className="truncate text-sm text-muted">
-                      {a.modalidade ?? a.objetivo ?? "Sem objetivo"} · sem planilha ativa
-                    </p>
-                  </div>
-                  <ChevronRightIcon className="h-5 w-5 text-muted" />
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* Alunos recentes */}
       <section>
         <div className="mb-4 flex items-center justify-between">
@@ -266,6 +322,73 @@ export default function DashboardPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+function AlertaCard({
+  titulo,
+  icon,
+  itens,
+  vazio,
+}: {
+  titulo: string;
+  icon: React.ReactNode;
+  itens: AlertaPersonal[];
+  vazio: string;
+}) {
+  const visiveis = itens.slice(0, 4);
+  const ocultos = Math.max(0, itens.length - visiveis.length);
+
+  return (
+    <Card className="overflow-hidden">
+      <div className="flex items-center justify-between gap-2 border-b border-line bg-surface-2/40 p-3.5">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold">{titulo}</p>
+          <p className="text-xs text-muted">
+            {itens.length} aluno{itens.length === 1 ? "" : "s"}
+          </p>
+        </div>
+        <span
+          className={cx(
+            "grid h-8 w-8 shrink-0 place-items-center rounded-lg",
+            itens.length > 0 ? "bg-danger/10 text-danger" : "bg-accent/10 text-accent",
+          )}
+        >
+          {icon}
+        </span>
+      </div>
+
+      {visiveis.length === 0 ? (
+        <p className="px-4 py-6 text-center text-sm text-muted">{vazio}</p>
+      ) : (
+        <div className="divide-y divide-line">
+          {visiveis.map((alerta) => (
+            <Link
+              key={`${alerta.tipo}-${alerta.alunoId}`}
+              href={`/alunos/${alerta.alunoId}`}
+              className="flex items-start gap-3 p-3.5 transition-colors hover:bg-surface-2/60"
+            >
+              <Avatar nome={alerta.nome} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="truncate text-sm font-semibold">{alerta.nome}</p>
+                  {alerta.prioridade === "alta" && <Badge tone="off">Alto</Badge>}
+                </div>
+                <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-muted">
+                  {alerta.detalhe}
+                </p>
+              </div>
+              <ChevronRightIcon className="mt-3 h-4 w-4 shrink-0 text-muted" />
+            </Link>
+          ))}
+          {ocultos > 0 && (
+            <p className="px-4 py-2.5 text-center text-xs font-semibold text-muted">
+              +{ocultos} outro{ocultos === 1 ? "" : "s"}
+            </p>
+          )}
+        </div>
+      )}
+    </Card>
   );
 }
 

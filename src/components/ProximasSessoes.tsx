@@ -26,8 +26,9 @@ function rotuloData(iso: string, hojeIso: string): string {
 }
 
 export function ProximasSessoes({ alunoId }: { alunoId: string }) {
-  const { sessoes, addSessao, updateSessao } = useStore();
+  const { sessoes, pacotesSessoes, agendarSessoes, updateSessao } = useStore();
   const [formOpen, setFormOpen] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
   const hojeIso = isoLocal(new Date());
   const proximas = sessoes
@@ -36,11 +37,30 @@ export function ProximasSessoes({ alunoId }: { alunoId: string }) {
     .slice(0, 5);
 
   const salvar = (v: SessaoFormPayload) => {
-    addSessao(v);
+    agendarSessoes(
+      {
+        alunoId: v.alunoId,
+        data: v.data,
+        hora: v.hora,
+        duracaoMin: v.duracaoMin,
+        foco: v.foco,
+        pacoteId: v.pacoteId,
+      },
+      {
+        semanas: v.recorrenciaSemanas,
+        permitirConflito: v.permitirConflito,
+      },
+    );
     setFormOpen(false);
   };
-  const marcar = (s: Sessao, status: StatusSessao) =>
-    updateSessao(s.id, { status: s.status === status ? "agendada" : status });
+  const marcar = (s: Sessao, status: StatusSessao) => {
+    try {
+      setErro(null);
+      updateSessao(s.id, { status: s.status === status ? "agendada" : status });
+    } catch (error) {
+      setErro(error instanceof Error ? error.message : "Não foi possível atualizar a sessão.");
+    }
+  };
 
   return (
     <section className="space-y-4">
@@ -60,6 +80,12 @@ export function ProximasSessoes({ alunoId }: { alunoId: string }) {
         </div>
       </div>
 
+      {erro && (
+        <p role="alert" className="rounded-xl bg-danger/10 px-4 py-3 text-sm font-semibold text-danger">
+          {erro}
+        </p>
+      )}
+
       {proximas.length === 0 ? (
         <Card className="px-5 py-8 text-center text-sm text-muted">
           Nenhuma sessão agendada. Clique em <span className="font-semibold text-text">Agendar</span>{" "}
@@ -76,11 +102,30 @@ export function ProximasSessoes({ alunoId }: { alunoId: string }) {
               <div className="min-w-0 flex-1">
                 {s.foco && <p className="truncate font-semibold">{s.foco}</p>}
                 {s.duracaoMin != null && <p className="text-xs text-muted">{s.duracaoMin} min</p>}
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {s.recorrenciaId && (
+                    <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted">
+                      Semanal
+                    </span>
+                  )}
+                  {s.origemReposicaoId && (
+                    <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+                      Reposição
+                    </span>
+                  )}
+                  {s.pacoteId && (
+                    <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+                      {pacotesSessoes.find((pacote) => pacote.id === s.pacoteId)?.nome ?? "Pacote"}
+                    </span>
+                  )}
+                </div>
               </div>
               {s.status === "realizada" ? (
                 <Badge tone="volt">Feito</Badge>
               ) : s.status === "faltou" ? (
                 <Badge tone="off">Faltou</Badge>
+              ) : s.status === "cancelada" ? (
+                <Badge tone="neutral">Cancelada</Badge>
               ) : (
                 <div className="flex items-center gap-1">
                   <button

@@ -10,8 +10,12 @@ import {
   ChartIcon,
   DumbbellIcon,
   GridIcon,
+  LeafIcon,
+  TemplateIcon,
   UsersIcon,
+  UserPlusIcon,
   WalletIcon,
+  WhatsappIcon,
 } from "./icons";
 import { ThemeToggle } from "./ThemeToggle";
 import { cx } from "./ui";
@@ -19,8 +23,12 @@ import { cx } from "./ui";
 const nav = [
   { href: "/", label: "Painel", icon: GridIcon },
   { href: "/alunos", label: "Alunos", icon: UsersIcon },
+  { href: "/interessados", label: "Interessados", icon: UserPlusIcon },
   { href: "/biblioteca", label: "Biblioteca", icon: BookIcon },
+  { href: "/alimentos", label: "Alimentos", icon: LeafIcon },
+  { href: "/modelos", label: "Modelos", icon: TemplateIcon },
   { href: "/agenda", label: "Agenda", icon: CalendarIcon },
+  { href: "/lembretes", label: "Lembretes", icon: WhatsappIcon },
   { href: "/financeiro", label: "Financeiro", icon: WalletIcon },
   { href: "/relatorios", label: "Relatórios", icon: ChartIcon },
 ];

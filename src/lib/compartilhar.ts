@@ -1,4 +1,5 @@
 import type { Treino } from "./types";
+import { detalhesDoBloco, tituloDoBloco, unidadesDaDivisao } from "./blocos-treino";
 
 /**
  * Formata uma planilha de treino como texto pronto para WhatsApp
@@ -15,13 +16,26 @@ export function treinoParaTexto(treino: Treino, alunoNome?: string): string {
     if (div.exercicios.length === 0) {
       linhas.push("_(sem exercícios)_");
     } else {
-      div.exercicios.forEach((ex, i) => {
-        const detalhes = [`${ex.series}x${ex.repeticoes}`];
-        if (ex.carga) detalhes.push(ex.carga);
-        if (ex.descanso) detalhes.push(`desc ${ex.descanso}`);
-        let linha = `${i + 1}. ${ex.nome} — ${detalhes.join(" · ")}`;
-        if (ex.observacoes) linha += ` (${ex.observacoes})`;
-        linhas.push(linha);
+      let numeroExercicio = 1;
+      const unidades = unidadesDaDivisao(div);
+      unidades.forEach((unidade, indiceUnidade) => {
+        if (unidade.bloco) {
+          const detalhes = detalhesDoBloco(unidade.bloco);
+          const configuracao = [tituloDoBloco(unidade.bloco), ...detalhes].join(" · ");
+          linhas.push(`_${configuracao}_`);
+        }
+
+        unidade.exercicios.forEach((ex) => {
+          const detalhes = [`${ex.series}x${ex.repeticoes}`];
+          if (ex.carga) detalhes.push(ex.carga);
+          if (ex.descanso) detalhes.push(`desc ${ex.descanso}`);
+          let linha = `${numeroExercicio}. ${ex.nome} — ${detalhes.join(" · ")}`;
+          if (ex.observacoes) linha += ` (${ex.observacoes})`;
+          linhas.push(linha);
+          numeroExercicio += 1;
+        });
+
+        if (unidade.bloco && indiceUnidade < unidades.length - 1) linhas.push("");
       });
     }
     linhas.push("");
