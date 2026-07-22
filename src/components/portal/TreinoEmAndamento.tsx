@@ -420,6 +420,18 @@ export function TreinoEmAndamento({
     return () => window.clearInterval(interval);
   }, [timerPausado, timerTerminaEm]);
 
+  // Modo foco é tela cheia: trava o scroll do fundo (evita barra dupla) e liga o Esc.
+  useEffect(() => {
+    if (!modoFoco) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setModoFoco(false);
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [modoFoco]);
+
   const sessaoConcluida = sessoes.find(
     (sessao) =>
       sessao.alunoId === alunoId &&
