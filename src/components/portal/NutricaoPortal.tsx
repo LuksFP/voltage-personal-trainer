@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { LeafIcon } from "@/components/icons";
 import { PlanoAlimentarView } from "@/components/PlanoAlimentarView";
+import { MacrosPlanoVsMeta } from "@/components/MacrosPlanoVsMeta";
+import { ListaDeCompras } from "@/components/ListaDeCompras";
 import { distribuicaoMacros, temMetasDefinidas, totaisDoPlano } from "@/lib/nutricao";
 import { useStore } from "@/lib/store";
 
@@ -14,6 +17,7 @@ const CORES_MACRO: Record<string, string> = {
 export function NutricaoPortal({ alunoId }: { alunoId: string }) {
   const store = useStore();
   const plano = store.planoAtivoDoAluno(alunoId);
+  const [mostrarCompras, setMostrarCompras] = useState(false);
 
   if (!plano) return null;
 
@@ -89,6 +93,26 @@ export function NutricaoPortal({ alunoId }: { alunoId: string }) {
             </span>
           </div>
         )}
+
+        <div className="mt-4">
+          <MacrosPlanoVsMeta plano={plano} banco={store.bancoAlimentos} />
+        </div>
+
+        <div className="mt-4">
+          <button
+            type="button"
+            onClick={() => setMostrarCompras((v) => !v)}
+            className="text-xs font-semibold text-accent hover:underline"
+            aria-expanded={mostrarCompras}
+          >
+            {mostrarCompras ? "Ocultar lista de compras" : "🛒 Minha lista de compras"}
+          </button>
+          {mostrarCompras && (
+            <div className="mt-3">
+              <ListaDeCompras plano={plano} banco={store.bancoAlimentos} />
+            </div>
+          )}
+        </div>
 
         <div className="mt-4 border-t border-line pt-4">
           <PlanoAlimentarView plano={plano} banco={store.bancoAlimentos} />

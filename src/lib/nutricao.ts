@@ -1,10 +1,12 @@
 import type {
   AlimentoBanco,
   AlimentoRefeicao,
+  CategoriaAlimento,
   MacrosCalculados,
   MetasMacros,
   PlanoAlimentar,
   RefeicaoPlano,
+  UnidadeMedidaAlimento,
 } from "./types";
 
 // Calorias por grama de cada macronutriente (padrão Atwater).
@@ -324,4 +326,168 @@ export function distribuicaoDeMacros(macros: MacrosCalculados): FatiaMacro[] {
     carboidratos: macros.carboidratos || undefined,
     gorduras: macros.gorduras || undefined,
   });
+}
+
+// ── Plano montado × meta ────────────────────────────────────────────────────
+// Compara o total calculado do plano (alimentos vinculados) com a meta definida,
+// por macro. `percentual` só existe quando há meta > 0.
+
+export type ChaveComparacao = "kcal" | "proteinas" | "carboidratos" | "gorduras";
+
+export interface ComparacaoMacro {
+  chave: ChaveComparacao;
+  rotulo: string;
+  unidade: string;
+  planejado: number;
+  meta?: number;
+  percentual?: number; // planejado / meta × 100
+}
+
+export function compararPlanoComMeta(
+  plano: PlanoAlimentar,
+  banco: readonly AlimentoBanco[],
+): { linhas: ComparacaoMacro[]; temMeta: boolean; itensCalculados: number } {
+  const totais = totaisDoPlano(plano, banco);
+  const p = totais.macros;
+  const m = plano.metas;
+  const base: Omit<ComparacaoMacro, "percentual">[] = [
+    { chave: "kcal", rotulo: "Calorias", unidade: "kcal", planejado: p.kcal, meta: m.calorias },
+    { chave: "proteinas", rotulo: "Proteínas", unidade: "g", planejado: p.proteinas, meta: m.proteinas },
+    { chave: "carboidratos", rotulo: "Carboidratos", unidade: "g", planejado: p.carboidratos, meta: m.carboidratos },
+    { chave: "gorduras", rotulo: "Gorduras", unidade: "g", planejado: p.gorduras, meta: m.gorduras },
+  ];
+  const linhas = base.map((linha) => ({
+    ...linha,
+    percentual:
+      linha.meta !== undefined && linha.meta > 0
+        ? Math.round((linha.planejado / linha.meta) * 100)
+        : undefined,
+  }));
+  return {
+    linhas,
+    temMeta: linhas.some((l) => l.meta !== undefined),
+    itensCalculados: totais.itensCalculados,
+  };
+}
+
+// ── Lista de compras ────────────────────────────────────────────────────────
+// Agrega os alimentos de todas as refeições. Vinculados ao banco somam a
+// quantidade numérica (mesma unidade) e herdam a categoria; avulsos são listados
+// com suas quantidades em texto. Agrupado por categoria.
+
+export interface ItemListaCompra {
+  chave: string;
+  nome: string;
+  categoria: CategoriaAlimento;
+  vinculado: boolean;
+  quantidadeTotal?: number; // soma (vinculado, mesma unidade)
+  unidade?: UnidadeMedidaAlimento;
+  detalhes: string[]; // quantidades em texto (avulsos) para exibição
+  ocorrencias: number;
+}
+
+export interface GrupoListaCompra {
+  categoria: CategoriaAlimento;
+  rotulo: string;
+  itens: ItemListaCompra[];
+}
+
+const ROTULO_CATEGORIA: Record<CategoriaAlimento, string> = {
+  proteina: "Proteínas",
+  carboidrato: "Carboidratos",
+  gordura: "Gorduras",
+  fruta: "Frutas",
+  vegetal: "Vegetais",
+  laticinio: "Laticínios",
+  bebida: "Bebidas",
+  suplemento: "Suplementos",
+  outro: "Outros",
+};
+
+const ORDEM_CATEGORIA: CategoriaAlimento[] = [
+  "proteina",
+  "carboidrato",
+  "gordura",
+  "vegetal",
+  "fruta",
+  "laticinio",
+  "bebida",
+  "suplemento",
+  "outro",
+];
+
+function chaveNome(nome: string): string {
+  return nome.trim().toLocaleLowerCase("pt-BR");
+}
+
+export function listaDeCompras(
+  plano: PlanoAlimentar,
+  banco: readonly AlimentoBanco[],
+): GrupoListaCompra[] {
+  const bancoPorId = indexarBanco(banco);
+  const itens = new Map<string, ItemListaCompra>();
+
+  for (const refeicao of plano.refeicoes) {
+    for (const alimento of refeicao.alimentos) {
+      const doBanco =
+        alimento.bancoId !== undefined ? bancoPorId.get(alimento.bancoId) : undefined;
+      const vinculado = Boolean(doBanco && alimento.quantidadeNum !== undefined);
+      const categoria: CategoriaAlimento = doBanco?.categoria ?? "outro";
+      const chave = vinculado ? `banco:${alimento.bancoId}` : `nome:${chaveNome(alimento.nome)}`;
+
+      const existente = itens.get(chave);
+      if (existente) {
+        existente.ocorrencias += 1;
+        if (vinculado && alimento.quantidadeNum !== undefined) {
+          existente.quantidadeTotal = (existente.quantidadeTotal ?? 0) + alimento.quantidadeNum;
+        } else if (alimento.quantidade.trim()) {
+          existente.detalhes.push(alimento.quantidade.trim());
+        }
+      } else {
+        itens.set(chave, {
+          chave,
+          nome: alimento.nome,
+          categoria,
+          vinculado,
+          quantidadeTotal: vinculado ? alimento.quantidadeNum : undefined,
+          unidade: doBanco?.unidade,
+          detalhes: !vinculado && alimento.quantidade.trim() ? [alimento.quantidade.trim()] : [],
+          ocorrencias: 1,
+        });
+      }
+    }
+  }
+
+  const grupos = new Map<CategoriaAlimento, ItemListaCompra[]>();
+  for (const item of itens.values()) {
+    const lista = grupos.get(item.categoria) ?? [];
+    lista.push(item);
+    grupos.set(item.categoria, lista);
+  }
+
+  return ORDEM_CATEGORIA.filter((categoria) => grupos.has(categoria)).map((categoria) => ({
+    categoria,
+    rotulo: ROTULO_CATEGORIA[categoria],
+    itens: (grupos.get(categoria) ?? []).sort((a, b) =>
+      a.nome.localeCompare(b.nome, "pt-BR"),
+    ),
+  }));
+}
+
+// Texto plano da lista de compras (para copiar / enviar no WhatsApp).
+export function listaDeComprasTexto(grupos: GrupoListaCompra[]): string {
+  return grupos
+    .map((grupo) => {
+      const linhas = grupo.itens.map((item) => {
+        const qtd =
+          item.vinculado && item.quantidadeTotal !== undefined
+            ? ` — ${arredondar1(item.quantidadeTotal)} ${item.unidade ?? ""}`.trimEnd()
+            : item.detalhes.length > 0
+              ? ` — ${item.detalhes.join(" + ")}`
+              : "";
+        return `• ${item.nome}${qtd}`;
+      });
+      return `*${grupo.rotulo}*\n${linhas.join("\n")}`;
+    })
+    .join("\n\n");
 }

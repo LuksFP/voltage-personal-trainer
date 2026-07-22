@@ -13,11 +13,14 @@ import {
 import { Modal } from "./Modal";
 import { PlanoAlimentarForm } from "./PlanoAlimentarForm";
 import { PlanoAlimentarView } from "./PlanoAlimentarView";
+import { MacrosPlanoVsMeta } from "./MacrosPlanoVsMeta";
+import { ListaDeCompras } from "./ListaDeCompras";
 import { Badge, Button, Card } from "./ui";
 import { LeafIcon, PencilIcon, PlusIcon, TrashIcon } from "./icons";
 
 export function NutricaoAluno({ alunoId }: { alunoId: string }) {
   const {
+    getAluno,
     planosDoAluno,
     addPlanoAlimentar,
     updatePlanoAlimentar,
@@ -26,6 +29,7 @@ export function NutricaoAluno({ alunoId }: { alunoId: string }) {
     removePlanoAlimentar,
     bancoAlimentos,
   } = useStore();
+  const telefone = getAluno(alunoId)?.telefone;
   const planos = planosDoAluno(alunoId);
   const ativos = planos.filter((plano) => plano.status === "ativo");
   const arquivados = planos.filter((plano) => plano.status === "arquivado");
@@ -112,6 +116,7 @@ export function NutricaoAluno({ alunoId }: { alunoId: string }) {
               key={plano.id}
               plano={plano}
               banco={bancoAlimentos}
+              telefone={telefone}
               onEditar={() => {
                 setEditando(plano);
                 setFormAberto(true);
@@ -147,6 +152,7 @@ export function NutricaoAluno({ alunoId }: { alunoId: string }) {
                   key={plano.id}
                   plano={plano}
                   banco={bancoAlimentos}
+                  telefone={telefone}
                   onReativar={() => executar(() => reativarPlanoAlimentar(plano.id))}
                   onExcluir={() => excluir(plano)}
                 />
@@ -177,6 +183,7 @@ export function NutricaoAluno({ alunoId }: { alunoId: string }) {
 function PlanoCard({
   plano,
   banco,
+  telefone,
   onEditar,
   onArquivar,
   onReativar,
@@ -184,12 +191,14 @@ function PlanoCard({
 }: {
   plano: PlanoAlimentar;
   banco: AlimentoBanco[];
+  telefone?: string;
   onEditar?: () => void;
   onArquivar?: () => void;
   onReativar?: () => void;
   onExcluir: () => void;
 }) {
   const [aberto, setAberto] = useState(plano.status === "ativo");
+  const [mostrarCompras, setMostrarCompras] = useState(false);
   const fatias = distribuicaoMacros(plano.metas);
   const totalAlimentos = contarAlimentos(plano);
   const calculado = totaisDoPlano(plano, banco);
@@ -301,7 +310,25 @@ function PlanoCard({
         )}
 
         {aberto && (
-          <div className="mt-4 border-t border-line pt-4">
+          <div className="mt-4 space-y-4 border-t border-line pt-4">
+            <MacrosPlanoVsMeta plano={plano} banco={banco} />
+
+            <div>
+              <button
+                type="button"
+                onClick={() => setMostrarCompras((v) => !v)}
+                className="text-xs font-semibold text-accent hover:underline"
+                aria-expanded={mostrarCompras}
+              >
+                {mostrarCompras ? "Ocultar lista de compras" : "🛒 Lista de compras"}
+              </button>
+              {mostrarCompras && (
+                <div className="mt-3">
+                  <ListaDeCompras plano={plano} banco={banco} telefone={telefone} />
+                </div>
+              )}
+            </div>
+
             <PlanoAlimentarView plano={plano} banco={banco} />
           </div>
         )}
