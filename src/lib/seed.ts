@@ -405,6 +405,7 @@ export const treinosSeed: Treino[] = [
       {
         id: "d1",
         nome: "A — Peito e Tríceps",
+        diasSemana: [1, 4],
         exercicios: [
           { id: "e1", nome: "Supino reto com barra", series: "4", repeticoes: "8-10", carga: "60kg", descanso: "90s" },
           { id: "e2", nome: "Supino inclinado com halteres", series: "3", repeticoes: "10-12", carga: "22kg", descanso: "75s" },
@@ -415,6 +416,7 @@ export const treinosSeed: Treino[] = [
       {
         id: "d2",
         nome: "B — Costas e Bíceps",
+        diasSemana: [2, 5],
         exercicios: [
           { id: "e5", nome: "Barra fixa", series: "4", repeticoes: "máx", carga: "corporal", descanso: "90s" },
           { id: "e6", nome: "Remada curvada", series: "4", repeticoes: "8-10", carga: "50kg", descanso: "90s" },
@@ -424,6 +426,7 @@ export const treinosSeed: Treino[] = [
       {
         id: "d3",
         nome: "C — Pernas e Ombro",
+        diasSemana: [3, 6],
         exercicios: [
           { id: "e8", nome: "Agachamento livre", series: "4", repeticoes: "8-10", carga: "80kg", descanso: "120s" },
           { id: "e9", nome: "Leg press 45º", series: "4", repeticoes: "12", carga: "180kg", descanso: "90s" },

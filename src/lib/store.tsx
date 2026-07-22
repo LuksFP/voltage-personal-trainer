@@ -485,6 +485,7 @@ interface StoreContextValue extends StoreData {
   // divisões
   addDivisao: (treinoId: string, nome: string) => void;
   updateDivisao: (treinoId: string, divisaoId: string, nome: string) => void;
+  setDivisaoDias: (treinoId: string, divisaoId: string, dias: number[]) => void;
   removeDivisao: (treinoId: string, divisaoId: string) => void;
   // exercícios
   addExercicio: (treinoId: string, divisaoId: string, ex: Omit<Exercicio, "id">) => void;
@@ -3297,6 +3298,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         mutTreino(treinoId, (t) => ({
           ...t,
           divisoes: t.divisoes.map((dv) => (dv.id === divisaoId ? { ...dv, nome } : dv)),
+        })),
+      setDivisaoDias: (treinoId, divisaoId, dias) =>
+        mutTreino(treinoId, (t) => ({
+          ...t,
+          divisoes: t.divisoes.map((dv) =>
+            dv.id === divisaoId
+              ? { ...dv, diasSemana: [...new Set(dias)].sort((a, b) => a - b) }
+              : dv,
+          ),
         })),
       removeDivisao: (treinoId, divisaoId) =>
         mutTreino(treinoId, (t) => ({

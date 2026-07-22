@@ -170,6 +170,18 @@ function isDivisao(value: unknown): value is Divisao {
     return false;
   }
 
+  // `diasSemana` (agenda semanal da divisão) é opcional; quando presente, deve ser
+  // uma lista de inteiros de 0 (domingo) a 6 (sábado).
+  if (
+    value.diasSemana !== undefined &&
+    (!Array.isArray(value.diasSemana) ||
+      !value.diasSemana.every(
+        (d) => typeof d === "number" && Number.isInteger(d) && d >= 0 && d <= 6,
+      ))
+  ) {
+    return false;
+  }
+
   // `blocos` surgiu no schema 5. Sua ausência mantém treinos e modelos antigos válidos.
   if (value.blocos === undefined) return true;
   if (!Array.isArray(value.blocos) || !value.blocos.every(isBlocoTreino)) return false;

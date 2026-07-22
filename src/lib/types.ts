@@ -577,6 +577,9 @@ export interface Divisao {
   nome: string; // ex.: "A — Peito e Tríceps"
   exercicios: Exercicio[];
   blocos?: BlocoTreino[];
+  // Dias da semana em que esta divisão é o treino do dia (0=domingo … 6=sábado).
+  // Opcional: sem dias, o portal cai no rodízio pela última divisão concluída.
+  diasSemana?: number[];
 }
 
 export interface Treino {

@@ -4,16 +4,19 @@ import { useState } from "react";
 import { useStore, type BlocoTreinoInput } from "@/lib/store";
 import { resumoDaExecucao } from "@/lib/historico-exercicios";
 import type { BlocoTreino, Divisao, Exercicio } from "@/lib/types";
+import { DIAS_CURTOS, DIAS_LONGOS } from "@/lib/dias-treino";
 import { ExercicioForm, type ExercicioValues } from "./ExercicioForm";
 import { Modal } from "./Modal";
 import { PencilIcon, PlusIcon, TrashIcon } from "./icons";
-import { Button, Input } from "./ui";
+import { Button, Input, cx } from "./ui";
 
 export interface EstruturaTreinoEditorProps {
   alunoId?: string;
   divisoes: Divisao[];
   onAddDivisao: (nome: string) => void;
   onUpdateDivisao: (divisaoId: string, nome: string) => void;
+  /** Define os dias da semana desta divisão. Ausente = agenda semanal oculta (ex.: modelos). */
+  onSetDias?: (divisaoId: string, dias: number[]) => void;
   onRemoveDivisao: (divisaoId: string) => void;
   onAddExercicio: (divisaoId: string, exercicio: ExercicioValues) => void;
   onUpdateExercicio: (divisaoId: string, exercicio: Exercicio) => void;
@@ -28,6 +31,7 @@ export function EstruturaTreinoEditor({
   divisoes,
   onAddDivisao,
   onUpdateDivisao,
+  onSetDias,
   onRemoveDivisao,
   onAddExercicio,
   onUpdateExercicio,
@@ -56,6 +60,7 @@ export function EstruturaTreinoEditor({
             alunoId={alunoId}
             divisao={divisao}
             onUpdateNome={(nome) => onUpdateDivisao(divisao.id, nome)}
+            onSetDias={onSetDias ? (dias) => onSetDias(divisao.id, dias) : undefined}
             onRemove={() => onRemoveDivisao(divisao.id)}
             onAddExercicio={(exercicio) => onAddExercicio(divisao.id, exercicio)}
             onUpdateExercicio={(exercicio) => onUpdateExercicio(divisao.id, exercicio)}
@@ -127,6 +132,7 @@ function DivisaoEditor({
   alunoId,
   divisao,
   onUpdateNome,
+  onSetDias,
   onRemove,
   onAddExercicio,
   onUpdateExercicio,
@@ -138,6 +144,7 @@ function DivisaoEditor({
   alunoId?: string;
   divisao: Divisao;
   onUpdateNome: (nome: string) => void;
+  onSetDias?: (dias: number[]) => void;
   onRemove: () => void;
   onAddExercicio: (exercicio: ExercicioValues) => void;
   onUpdateExercicio: (exercicio: Exercicio) => void;
@@ -284,6 +291,43 @@ function DivisaoEditor({
           </Button>
         </div>
       </div>
+
+      {onSetDias && (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-muted">Dias:</span>
+          <div className="flex gap-1">
+            {DIAS_CURTOS.map((rotulo, dia) => {
+              const ativo = divisao.diasSemana?.includes(dia) ?? false;
+              return (
+                <button
+                  key={dia}
+                  type="button"
+                  onClick={() => {
+                    const atuais = divisao.diasSemana ?? [];
+                    onSetDias(
+                      ativo ? atuais.filter((d) => d !== dia) : [...atuais, dia],
+                    );
+                  }}
+                  aria-pressed={ativo}
+                  aria-label={DIAS_LONGOS[dia]}
+                  title={DIAS_LONGOS[dia]}
+                  className={cx(
+                    "h-8 w-8 rounded-lg text-xs font-bold transition-colors",
+                    ativo
+                      ? "bg-volt text-ink"
+                      : "bg-surface-2 text-muted hover:bg-surface-2/70 hover:text-text",
+                  )}
+                >
+                  {rotulo}
+                </button>
+              );
+            })}
+          </div>
+          {(divisao.diasSemana?.length ?? 0) === 0 && (
+            <span className="text-xs text-muted">rodízio automático</span>
+          )}
+        </div>
+      )}
 
       {divisao.exercicios.length === 0 ? (
         <p className="rounded-lg bg-surface-2/40 px-3 py-3 text-sm text-muted">

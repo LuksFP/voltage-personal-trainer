@@ -192,6 +192,7 @@ function TreinoCard({
     criarTemplateDeTreino,
     addDivisao,
     updateDivisao,
+    setDivisaoDias,
     removeDivisao,
     addExercicio,
     updateExercicio,
@@ -372,6 +373,7 @@ function TreinoCard({
         onUpdateDivisao={(divisaoId, nomeDivisao) =>
           updateDivisao(treino.id, divisaoId, nomeDivisao)
         }
+        onSetDias={(divisaoId, dias) => setDivisaoDias(treino.id, divisaoId, dias)}
         onRemoveDivisao={(divisaoId) => removeDivisao(treino.id, divisaoId)}
         onAddExercicio={(divisaoId, exercicio) =>
           addExercicio(treino.id, divisaoId, exercicio)

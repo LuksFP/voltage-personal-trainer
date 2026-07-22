@@ -5,6 +5,11 @@ import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import type { Treino } from "@/lib/types";
 import { resumoDoPacote } from "@/lib/pacotes";
+import {
+  escolherTreinoDoDia,
+  rotuloDias,
+  ultimaDivisaoConcluida,
+} from "@/lib/dias-treino";
 import { TreinoEmAndamento } from "@/components/portal/TreinoEmAndamento";
 import { CheckinSemanalPortal } from "@/components/portal/CheckinSemanalPortal";
 import { HabitosDiariosPortal } from "@/components/portal/HabitosDiariosPortal";
@@ -62,6 +67,28 @@ export default function PortalPage() {
     const treinos = treinosDoAluno(aluno.id);
     return treinos.find((treino) => treino.ativo) ?? treinos[0];
   }, [aluno, treinosDoAluno]);
+
+  const diaSemana = new Date().getDay();
+  const escolhaTreino = useMemo(() => {
+    const ultima = aluno ? ultimaDivisaoConcluida(sessoes, aluno.id) : null;
+    return escolherTreinoDoDia(treinoAtivo?.divisoes ?? [], diaSemana, ultima);
+  }, [aluno, sessoes, treinoAtivo, diaSemana]);
+
+  const divisaoDeHoje =
+    escolhaTreino.tipo === "agendado" || escolhaTreino.tipo === "rodizio"
+      ? escolhaTreino.divisao
+      : undefined;
+  const treinoHojeConcluido = Boolean(
+    aluno &&
+      divisaoDeHoje &&
+      sessoes.some(
+        (s) =>
+          s.alunoId === aluno.id &&
+          s.data === hoje &&
+          s.status === "realizada" &&
+          (s.divisaoId === divisaoDeHoje.id || s.foco === divisaoDeHoje.nome),
+      ),
+  );
 
   const proximas = useMemo(() => {
     if (!aluno) return [];
@@ -287,19 +314,97 @@ export default function PortalPage() {
                 Seu personal ainda não montou seu treino. Assim que montar, aparece aqui.
               </div>
             ) : (
-              <div className="space-y-3">
-                {treinoAtivo.divisoes.map((divisao, index) => (
-                  <TreinoEmAndamento
-                    key={divisao.id}
-                    alunoId={aluno.id}
-                    treinoId={treinoAtivo.id}
-                    treinoNome={treinoAtivo.nome}
-                    divisao={divisao}
-                    hoje={hoje}
-                    aberturaInicial={index === 0}
-                  />
-                ))}
-              </div>
+              <>
+                {/* ── Card "Treino de hoje" ─────────────────────────── */}
+                {divisaoDeHoje ? (
+                  <div
+                    className={cx(
+                      "mb-4 rounded-xl2 border p-5",
+                      treinoHojeConcluido
+                        ? "border-accent/30 bg-accent/8"
+                        : "border-volt/40 bg-gradient-to-br from-volt/12 to-transparent",
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs font-bold uppercase tracking-widest text-accent">
+                        {treinoHojeConcluido
+                          ? "Treino de hoje concluído"
+                          : escolhaTreino.tipo === "rodizio"
+                            ? "Próximo no rodízio"
+                            : "Treino de hoje"}
+                      </p>
+                      {escolhaTreino.tipo === "agendado" &&
+                        rotuloDias(divisaoDeHoje.diasSemana) && (
+                          <span className="rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-muted">
+                            {rotuloDias(divisaoDeHoje.diasSemana)}
+                          </span>
+                        )}
+                    </div>
+                    <h3 className="font-display mt-1.5 text-2xl font-bold leading-tight">
+                      {divisaoDeHoje.nome}
+                    </h3>
+                    <p className="mt-1 text-sm text-muted">
+                      {divisaoDeHoje.exercicios.length} exercício
+                      {divisaoDeHoje.exercicios.length === 1 ? "" : "s"}
+                      {escolhaTreino.tipo === "rodizio" && " · sugerido pelo seu histórico"}
+                    </p>
+                    {treinoHojeConcluido ? (
+                      <p className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-accent/15 px-3 py-2 text-sm font-semibold text-accent">
+                        <CheckIcon className="h-4 w-4" /> Mandou bem! Treino registrado hoje.
+                      </p>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          document
+                            .getElementById("treino-hoje")
+                            ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                        }
+                        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-volt px-5 py-2.5 text-sm font-bold text-ink transition-transform hover:-translate-y-0.5"
+                      >
+                        <DumbbellIcon className="h-4 w-4" />
+                        Começar treino
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="mb-4 rounded-xl2 border border-line bg-surface/70 px-4 py-6 text-center">
+                    <p className="font-display text-lg font-semibold">Dia de descanso 🌙</p>
+                    <p className="mt-1 text-sm text-muted">
+                      Hoje não há treino agendado. Recupere bem — se quiser adiantar, é só abrir
+                      um treino abaixo.
+                    </p>
+                  </div>
+                )}
+
+                {/* ── Divisões: a de hoje aberta e primeiro ─────────── */}
+                <div className="space-y-3">
+                  {[...treinoAtivo.divisoes]
+                    .sort((a, b) => {
+                      const ordem = (id: string) => (id === divisaoDeHoje?.id ? 0 : 1);
+                      return ordem(a.id) - ordem(b.id);
+                    })
+                    .map((divisao) => {
+                      const ehHoje = divisao.id === divisaoDeHoje?.id;
+                      return (
+                        <div
+                          key={divisao.id}
+                          id={ehHoje ? "treino-hoje" : undefined}
+                          className="scroll-mt-32"
+                        >
+                          <TreinoEmAndamento
+                            alunoId={aluno.id}
+                            treinoId={treinoAtivo.id}
+                            treinoNome={treinoAtivo.nome}
+                            divisao={divisao}
+                            hoje={hoje}
+                            aberturaInicial={ehHoje && !treinoHojeConcluido}
+                          />
+                        </div>
+                      );
+                    })}
+                </div>
+              </>
             )}
           </section>
         )}
