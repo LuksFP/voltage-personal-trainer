@@ -292,6 +292,8 @@ export function TreinoEmAndamento({
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [registrado, setRegistrado] = useState(false);
+  const [modoFoco, setModoFoco] = useState(false);
+  const [focoIndex, setFocoIndex] = useState(0);
 
   /* eslint-disable react-hooks/set-state-in-effect -- hidratação deliberada de um snapshot externo do localStorage após o mount */
   useEffect(() => {
@@ -403,8 +405,28 @@ export function TreinoEmAndamento({
     0,
   );
 
+  // Lista achatada de exercícios (na ordem dos blocos) para o modo foco.
+  const itensFoco = unidades.flatMap((unidade) =>
+    unidade.exercicios.map((exercicio) => ({
+      exercicio,
+      bloco: unidade.bloco,
+      blocoAgrupado: Boolean(unidade.bloco && unidade.bloco.tipo !== "individual"),
+    })),
+  );
+
   const garantirInicio = () => {
     setIniciadoEm((atual) => atual ?? new Date().toISOString());
+  };
+
+  const abrirFoco = () => {
+    garantirInicio();
+    const primeiroPendente = itensFoco.findIndex((item) => {
+      const series = seriesPorExercicio[item.exercicio.id] ?? [];
+      return series.some((serie) => !serie.concluida);
+    });
+    setFocoIndex(primeiroPendente >= 0 ? primeiroPendente : 0);
+    setErro(null);
+    setModoFoco(true);
   };
 
   const iniciarTimer = (segundos: number, contexto: string) => {
@@ -714,6 +736,21 @@ export function TreinoEmAndamento({
               )}
             </div>
           )}
+          {!concluidoHoje && itensFoco.length > 0 && (
+            <div className="border-b border-line bg-surface-2/15 p-3">
+              <button
+                type="button"
+                onClick={abrirFoco}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-volt py-3 text-sm font-bold text-ink transition-colors hover:bg-volt-strong"
+              >
+                <PlayIcon className="h-4 w-4" />
+                Iniciar modo foco
+              </button>
+              <p className="mt-2 text-center text-xs text-muted">
+                Um exercício por vez, com o cronômetro de descanso em tela cheia.
+              </p>
+            </div>
+          )}
           <div className="space-y-3 bg-surface-2/15 p-3">
             {unidades.map((unidade) => {
               const bloco = unidade.bloco;
@@ -1015,6 +1052,244 @@ export function TreinoEmAndamento({
           />
         )}
       </Modal>
+
+      {modoFoco && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-bg">
+          <header className="flex items-center gap-3 border-b border-line px-4 py-3">
+            <button
+              type="button"
+              onClick={() => setModoFoco(false)}
+              className="rounded-lg px-2.5 py-1.5 text-sm font-semibold text-muted hover:bg-surface-2 hover:text-text"
+            >
+              Sair
+            </button>
+            <div className="min-w-0 flex-1 text-center">
+              <p className="truncate text-sm font-semibold">{divisao.nome}</p>
+              <p className="text-xs text-muted">
+                {concluidoHoje
+                  ? "Treino concluído"
+                  : focoIndex < itensFoco.length
+                    ? `Exercício ${focoIndex + 1} de ${itensFoco.length}`
+                    : "Revisão final"}
+              </p>
+            </div>
+            <span className="w-12 shrink-0 text-right text-xs font-semibold tabular-nums text-muted">
+              {concluidas}/{totalSeries}
+            </span>
+          </header>
+          <div className="h-1 shrink-0 bg-surface-2">
+            <div
+              className="h-full bg-volt transition-all"
+              style={{ width: `${totalSeries > 0 ? (concluidas / totalSeries) * 100 : 0}%` }}
+            />
+          </div>
+
+          {timer && !concluidoHoje && (
+            <div className="shrink-0 border-b border-line bg-bg px-4 py-3">
+              <TimerDescanso
+                timer={timer}
+                onPause={pausarOuContinuarTimer}
+                onAdd={adicionarTempoTimer}
+                onSkip={() => setTimer(null)}
+              />
+            </div>
+          )}
+
+          <div className="flex-1 overflow-y-auto px-4 py-5">
+            <div className="mx-auto max-w-md">
+              {concluidoHoje ? (
+                <div className="grid place-items-center py-16 text-center">
+                  <span className="grid h-16 w-16 place-items-center rounded-2xl bg-volt text-ink">
+                    <CheckIcon className="h-8 w-8" />
+                  </span>
+                  <p className="font-display mt-4 text-2xl font-bold">Treino concluído! 🔥</p>
+                  <p className="mt-1 text-sm text-muted">
+                    {concluidas} série{concluidas === 1 ? "" : "s"} registrada
+                    {concluidas === 1 ? "" : "s"}. Mandou muito bem.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setModoFoco(false)}
+                    className="mt-6 rounded-xl bg-volt px-6 py-2.5 text-sm font-bold text-ink hover:bg-volt-strong"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              ) : focoIndex < itensFoco.length ? (
+                (() => {
+                  const { exercicio, bloco, blocoAgrupado } = itensFoco[focoIndex];
+                  const itemBiblioteca = exercicio.bibliotecaId
+                    ? getExercicioBiblioteca(exercicio.bibliotecaId)
+                    : undefined;
+                  const ultima = ultimoHistoricoExercicio(alunoId, {
+                    nome: exercicio.nome,
+                    bibliotecaId: exercicio.bibliotecaId,
+                  });
+                  const resumo = ultima ? resumoDaExecucao(ultima) : undefined;
+                  const series = seriesPorExercicio[exercicio.id] ?? [];
+                  const ultimo = focoIndex === itensFoco.length - 1;
+                  return (
+                    <>
+                      {blocoAgrupado && bloco && (
+                        <span className="mb-2 inline-block rounded-md bg-accent/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-accent">
+                          {tituloDoBloco(bloco)}
+                        </span>
+                      )}
+                      <h3 className="font-display text-2xl font-bold leading-tight">
+                        {exercicio.nome}
+                      </h3>
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+                        <span className="rounded-full bg-surface-2 px-3 py-1.5">
+                          {exercicio.series} × {exercicio.repeticoes}
+                        </span>
+                        {exercicio.carga && (
+                          <span className="rounded-full bg-surface-2 px-3 py-1.5">
+                            {exercicio.carga}
+                          </span>
+                        )}
+                        {exercicio.descanso && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-3 py-1.5">
+                            <ClockIcon className="h-3.5 w-3.5" /> {exercicio.descanso}
+                          </span>
+                        )}
+                      </div>
+                      {exercicio.observacoes && (
+                        <p className="mt-2 text-sm text-muted">{exercicio.observacoes}</p>
+                      )}
+                      {resumo && ultima && (
+                        <p className="mt-2 text-xs font-semibold text-accent">
+                          Última vez: {resumo.series}×{resumo.repeticoes}
+                          {resumo.carga ? ` · ${resumo.carga}` : ""} · {dataCurta(ultima.data)}
+                        </p>
+                      )}
+                      {itemBiblioteca?.videoUrl && (
+                        <a
+                          href={itemBiblioteca.videoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-accent"
+                        >
+                          <VideoIcon className="h-4 w-4" /> Ver demonstração
+                        </a>
+                      )}
+
+                      <div className="mt-5 space-y-2">
+                        {series.map((serie) => (
+                          <SerieRow
+                            key={serie.id}
+                            serie={serie}
+                            placeholderRepeticoes={exercicio.repeticoes}
+                            placeholderDuracao={
+                              bloco?.tipo === "circuito" && bloco.trabalhoSeg
+                                ? String(bloco.trabalhoSeg)
+                                : undefined
+                            }
+                            placeholderCarga={exercicio.carga}
+                            rotuloOrdem={blocoAgrupado ? "Round" : "Série"}
+                            podeRemover={series.length > 1}
+                            podeCopiar={serie.ordem > 1}
+                            onChange={(patch) => alterarSerie(exercicio.id, serie.id, patch)}
+                            onToggle={() => alternarConcluida(exercicio.id, serie)}
+                            onCopy={() => copiarAnterior(exercicio.id, serie)}
+                            onRemove={() => removerSerie(exercicio.id, serie.id)}
+                          />
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => adicionarSerie(exercicio.id)}
+                        className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold text-accent hover:bg-accent/10"
+                      >
+                        <PlusIcon className="h-3.5 w-3.5" />
+                        {blocoAgrupado ? "Adicionar round" : "Adicionar série"}
+                      </button>
+                      {erro && (
+                        <p role="alert" className="mt-3 rounded-xl bg-danger/10 px-3 py-2 text-sm font-semibold text-danger">
+                          {erro}
+                        </p>
+                      )}
+                      {ultimo && (
+                        <p className="mt-4 text-center text-xs text-muted">
+                          Último exercício — avance para revisar e concluir.
+                        </p>
+                      )}
+                    </>
+                  );
+                })()
+              ) : (
+                <>
+                  <h3 className="font-display text-2xl font-bold">Como foi o treino?</h3>
+                  <p className="mt-1 text-sm text-muted">
+                    Seu feedback ajuda o personal a ajustar as cargas.
+                  </p>
+                  <div className="mt-5">
+                    <FeedbackForm
+                      feedback={feedback}
+                      onChange={(proximo) => {
+                        garantirInicio();
+                        setFeedback(proximo);
+                      }}
+                    />
+                  </div>
+                  {erro && (
+                    <p role="alert" className="mt-4 rounded-xl bg-danger/10 px-3 py-2 text-sm font-semibold text-danger">
+                      {erro}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try {
+                        concluir();
+                      } catch (error) {
+                        setErro(
+                          error instanceof Error ? error.message : "Revise as séries concluídas.",
+                        );
+                      }
+                    }}
+                    disabled={enviando || concluidas === 0}
+                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-volt py-3.5 text-sm font-bold text-ink transition-colors hover:bg-volt-strong disabled:pointer-events-none disabled:opacity-40"
+                  >
+                    <CheckIcon className="h-4 w-4" />
+                    {enviando
+                      ? "Registrando…"
+                      : `Concluir treino · ${concluidas} série${concluidas === 1 ? "" : "s"}`}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {!concluidoHoje && (
+            <footer className="flex items-center gap-3 border-t border-line bg-bg px-4 py-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setErro(null);
+                  setFocoIndex((i) => Math.max(0, i - 1));
+                }}
+                disabled={focoIndex === 0}
+                className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold text-text transition-colors hover:bg-surface-2 disabled:pointer-events-none disabled:opacity-40"
+              >
+                Anterior
+              </button>
+              {focoIndex < itensFoco.length && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setErro(null);
+                    setFocoIndex((i) => Math.min(itensFoco.length, i + 1));
+                  }}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-surface-2 py-2.5 text-sm font-bold text-text transition-colors hover:bg-surface-2/70"
+                >
+                  {focoIndex === itensFoco.length - 1 ? "Revisar e concluir" : "Próximo"}
+                  <ChevronRightIcon className="h-4 w-4" />
+                </button>
+              )}
+            </footer>
+          )}
+        </div>
+      )}
     </>
   );
 }

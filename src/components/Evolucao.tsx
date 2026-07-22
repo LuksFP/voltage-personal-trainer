@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import type { Avaliacao } from "@/lib/types";
-import { Button, Card } from "./ui";
+import { Button, Card, cx } from "./ui";
 import { Modal } from "./Modal";
 import { LineChart, type ChartPoint } from "./LineChart";
 import { AvaliacaoForm, type AvaliacaoFormPayload } from "./AvaliacaoForm";
@@ -43,7 +43,25 @@ export function Evolucao({ alunoId }: { alunoId: string }) {
 
   // Avaliações que têm fotos — para o comparativo antes/depois.
   const comFotos = avaliacoes.filter((av) => av.fotos && av.fotos.length > 0);
-  const comparar = comFotos.length >= 2 ? { antes: comFotos[0], depois: comFotos[comFotos.length - 1] } : null;
+  const [comparaAntesId, setComparaAntesId] = useState<string | null>(null);
+  const [comparaDepoisId, setComparaDepoisId] = useState<string | null>(null);
+  // Seleção do usuário com fallback para primeira × última avaliação com foto.
+  const antesAv = comFotos.find((av) => av.id === comparaAntesId) ?? comFotos[0];
+  const depoisAv =
+    comFotos.find((av) => av.id === comparaDepoisId) ?? comFotos[comFotos.length - 1];
+  const comparar =
+    comFotos.length >= 2 && antesAv && depoisAv && antesAv.id !== depoisAv.id
+      ? { antes: antesAv, depois: depoisAv }
+      : null;
+  // Deltas de medida entre as duas avaliações comparadas.
+  const deltas = comparar
+    ? MEDIDAS.flatMap((m) => {
+        const antes = comparar.antes[m.key];
+        const depois = comparar.depois[m.key];
+        if (antes == null || depois == null) return [];
+        return [{ ...m, antes, depois, delta: depois - antes }];
+      })
+    : [];
 
   // Métricas que têm pelo menos um registro (para tiles) e ≥2 (para o gráfico).
   // Sem useMemo: o React Compiler memoiza automaticamente.
@@ -202,26 +220,80 @@ export function Evolucao({ alunoId }: { alunoId: string }) {
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { rot: "Antes", av: comparar.antes },
-                  { rot: "Depois", av: comparar.depois },
-                ].map(({ rot, av }) => (
-                  <button
-                    key={rot}
-                    type="button"
-                    onClick={() => setFotoAberta(av.fotos![0])}
-                    className="overflow-hidden rounded-xl border border-line text-left"
-                  >
-                    <div className="aspect-[3/4] w-full bg-surface-2">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={av.fotos![0]} alt={rot} className="h-full w-full object-cover" />
-                    </div>
-                    <div className="flex items-center justify-between px-2.5 py-1.5">
+                  {
+                    rot: "Antes",
+                    av: comparar.antes,
+                    valor: comparaAntesId ?? comparar.antes.id,
+                    onSelect: setComparaAntesId,
+                  },
+                  {
+                    rot: "Depois",
+                    av: comparar.depois,
+                    valor: comparaDepoisId ?? comparar.depois.id,
+                    onSelect: setComparaDepoisId,
+                  },
+                ].map(({ rot, av, valor, onSelect }) => (
+                  <div key={rot} className="overflow-hidden rounded-xl border border-line">
+                    <button
+                      type="button"
+                      onClick={() => setFotoAberta(av.fotos![0])}
+                      className="block w-full text-left"
+                    >
+                      <div className="aspect-[3/4] w-full bg-surface-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={av.fotos![0]} alt={rot} className="h-full w-full object-cover" />
+                      </div>
+                    </button>
+                    <div className="flex items-center justify-between gap-1 px-2 py-1.5">
                       <span className="text-xs font-semibold">{rot}</span>
-                      <span className="text-xs text-muted">{fmtData(av.data)}</span>
+                      <select
+                        value={valor}
+                        onChange={(e) => onSelect(e.target.value)}
+                        aria-label={`Data ${rot.toLowerCase()}`}
+                        className="min-w-0 max-w-[70%] truncate rounded-md bg-surface-2 px-1.5 py-1 text-xs text-muted"
+                      >
+                        {comFotos.map((opt) => (
+                          <option key={opt.id} value={opt.id}>
+                            {fmtData(opt.data)}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
+
+              {deltas.length > 0 && (
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {deltas.map((d) => {
+                    const parado = Math.abs(d.delta) < 0.05;
+                    return (
+                      <div
+                        key={d.key}
+                        className="rounded-lg bg-surface-2/50 px-2.5 py-2"
+                      >
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                          {d.label}
+                        </p>
+                        <p className="mt-0.5 text-sm font-semibold">
+                          {fmt(d.antes)} → {fmt(d.depois)}
+                          {d.unit.trim()}
+                        </p>
+                        <p
+                          className={cx(
+                            "text-xs font-bold",
+                            parado ? "text-muted" : "text-accent",
+                          )}
+                        >
+                          {parado
+                            ? "sem mudança"
+                            : `${d.delta > 0 ? "▲ +" : "▼ "}${fmt(d.delta)}${d.unit.trim()}`}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </Card>
           )}
 
