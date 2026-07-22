@@ -336,6 +336,7 @@ export function TreinoEmAndamento({
   const [exercicioTroca, setExercicioTroca] = useState<Exercicio | null>(null);
   const [exercicioVideo, setExercicioVideo] = useState<Exercicio | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [serieErroId, setSerieErroId] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [registrado, setRegistrado] = useState(false);
   const [modoFoco, setModoFoco] = useState(false);
@@ -599,6 +600,7 @@ export function TreinoEmAndamento({
       ),
     }));
     setErro(null);
+    setSerieErroId((atual) => (atual === serieId ? null : atual));
   };
 
   const alternarConcluida = (exercicioId: string, serie: SerieDraft) => {
@@ -631,9 +633,11 @@ export function TreinoEmAndamento({
       const mensagem = erroDaSerie(efetiva);
       if (mensagem) {
         setErro(`Série ${serie.ordem}: ${mensagem}`);
+        setSerieErroId(serie.id);
         return;
       }
     }
+    setSerieErroId(null);
     alterarSerie(exercicioId, serie.id, {
       ...preenchimento,
       concluida: !serie.concluida,
@@ -1037,6 +1041,7 @@ export function TreinoEmAndamento({
                                 rotuloOrdem={blocoAgrupado ? "Round" : "Série"}
                                 podeRemover={series.length > 1}
                                 podeCopiar={serie.ordem > 1}
+                                erro={serieErroId === serie.id ? erro : null}
                                 onChange={(patch) =>
                                   alterarSerie(exercicio.id, serie.id, patch)
                                 }
@@ -1271,6 +1276,7 @@ export function TreinoEmAndamento({
                             rotuloOrdem={blocoAgrupado ? "Round" : "Série"}
                             podeRemover={series.length > 1}
                             podeCopiar={serie.ordem > 1}
+                            erro={serieErroId === serie.id ? erro : null}
                             onChange={(patch) => alterarSerie(exercicio.id, serie.id, patch)}
                             onToggle={() => alternarConcluida(exercicio.id, serie)}
                             onCopy={() => copiarAnterior(exercicio.id, serie)}
@@ -1452,6 +1458,7 @@ function SerieRow({
   rotuloOrdem,
   podeRemover,
   podeCopiar,
+  erro: erroMarcacao,
   onChange,
   onToggle,
   onCopy,
@@ -1464,12 +1471,13 @@ function SerieRow({
   rotuloOrdem: "Série" | "Round";
   podeRemover: boolean;
   podeCopiar: boolean;
+  erro?: string | null;
   onChange: (patch: Partial<SerieDraft>) => void;
   onToggle: () => void;
   onCopy: () => void;
   onRemove: () => void;
 }) {
-  const erro = serie.concluida ? erroDaSerie(serie) : null;
+  const erro = (serie.concluida ? erroDaSerie(serie) : null) ?? erroMarcacao ?? null;
   return (
     <div
       className={cx(
