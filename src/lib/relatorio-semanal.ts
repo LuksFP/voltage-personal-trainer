@@ -326,10 +326,14 @@ function metricasTreino(historicos: HistoricoExercicio[]): MetricasTreinoSemanai
       historicos.length === 0 ? 0 : arredondar((detalhados.length / historicos.length) * 100),
     seriesTrabalho: series.length,
     exerciciosDistintos: new Set(historicos.map(chaveExercicio)).size,
-    rpeMedio:
-      series.length === 0
+    rpeMedio: (() => {
+      const comRpe = series.filter(
+        (serie): serie is (typeof series)[number] & { rpe: number } => serie.rpe != null,
+      );
+      return comRpe.length === 0
         ? null
-        : arredondar(series.reduce((total, serie) => total + serie.rpe, 0) / series.length),
+        : arredondar(comRpe.reduce((total, serie) => total + serie.rpe, 0) / comRpe.length);
+    })(),
     volumeExterno: {
       kg: seriesComVolume.length === 0 ? null : arredondar(volume),
       seriesComVolume: seriesComVolume.length,

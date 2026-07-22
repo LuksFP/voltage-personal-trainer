@@ -91,16 +91,41 @@ function quantidadeInicial(series: string): number {
   return Number.isInteger(numero) && numero > 0 ? Math.min(numero, 20) : 1;
 }
 
-function novaSerie(ordem: number, metrica: MetricaDraft = "repeticoes"): SerieDraft {
+// Primeiro inteiro da prescrição de reps (em faixas "8-10" usa o limite inferior).
+function repeticoesPrescritas(texto: string): string {
+  const m = /\d+/.exec(texto ?? "");
+  return m ? m[0] : "";
+}
+
+// Interpreta a carga prescrita pelo personal ("60kg", "corporal", "") num rascunho de série.
+function cargaPrescrita(texto: string): { modoCarga: ModoCargaDraft; valorKg: string } {
+  const t = (texto ?? "").trim().toLowerCase();
+  if (!t) return { modoCarga: "externa", valorKg: "" };
+  if (/corporal|peso do corpo|sem carga|livre/.test(t)) {
+    return { modoCarga: "peso-corporal", valorKg: "" };
+  }
+  const m = /\d+(?:[.,]\d+)?/.exec(t);
+  return { modoCarga: "externa", valorKg: m ? m[0].replace(",", ".") : "" };
+}
+
+type PrefillSerie = Partial<
+  Pick<SerieDraft, "repeticoes" | "duracaoSegundos" | "modoCarga" | "valorKg">
+>;
+
+function novaSerie(
+  ordem: number,
+  metrica: MetricaDraft = "repeticoes",
+  prefill: PrefillSerie = {},
+): SerieDraft {
   return {
     id: draftId(),
     ordem,
     tipo: "trabalho",
     metrica,
-    repeticoes: "",
-    duracaoSegundos: "",
-    modoCarga: "externa",
-    valorKg: "",
+    repeticoes: prefill.repeticoes ?? "",
+    duracaoSegundos: prefill.duracaoSegundos ?? "",
+    modoCarga: prefill.modoCarga ?? "externa",
+    valorKg: prefill.valorKg ?? "",
     rpe: "",
     observacoes: "",
     concluida: false,
@@ -127,9 +152,23 @@ function seriesIniciais(divisao: Divisao): Record<string, SerieDraft[]> {
             : quantidadeInicial(exercicio.series);
         const metrica: MetricaDraft =
           bloco?.tipo === "circuito" && bloco.trabalhoSeg ? "tempo" : "repeticoes";
+        const carga = cargaPrescrita(exercicio.carga);
+        // Pré-preenche com o que o personal prescreveu, para o aluno só confirmar.
+        const prefill: PrefillSerie =
+          metrica === "tempo"
+            ? {
+                duracaoSegundos:
+                  bloco?.tipo === "circuito" && bloco.trabalhoSeg
+                    ? String(bloco.trabalhoSeg)
+                    : "",
+                ...carga,
+              }
+            : { repeticoes: repeticoesPrescritas(exercicio.repeticoes), ...carga };
         return [
           exercicio.id,
-          Array.from({ length: quantidade }, (_, index) => novaSerie(index + 1, metrica)),
+          Array.from({ length: quantidade }, (_, index) =>
+            novaSerie(index + 1, metrica, prefill),
+          ),
         ];
       }),
     ),
@@ -161,8 +200,11 @@ function numeroNaoNegativo(texto: string): number | null {
 }
 
 function erroDaSerie(serie: SerieDraft): string | null {
-  const rpe = numeroPositivo(serie.rpe);
-  if (rpe === null || rpe < 1 || rpe > 10) return "Informe um RPE entre 1 e 10.";
+  // RPE é opcional; só valida a faixa se o aluno preencher.
+  if (serie.rpe.trim() !== "") {
+    const rpe = numeroPositivo(serie.rpe);
+    if (rpe === null || rpe < 1 || rpe > 10) return "RPE deve ficar entre 1 e 10 (ou deixe em branco).";
+  }
   if (serie.metrica === "repeticoes") {
     const repeticoes = numeroPositivo(serie.repeticoes);
     if (repeticoes === null || !Number.isInteger(repeticoes)) {
@@ -182,8 +224,12 @@ function erroDaSerie(serie: SerieDraft): string | null {
 
 function converterSerie(serie: SerieDraft): SerieExecutadaInput | null {
   if (erroDaSerie(serie)) return null;
-  const rpe = numeroPositivo(serie.rpe);
-  if (rpe === null) return null;
+  let rpe: number | undefined;
+  if (serie.rpe.trim() !== "") {
+    const parsed = numeroPositivo(serie.rpe);
+    if (parsed === null) return null;
+    rpe = parsed;
+  }
 
   let resultado: ResultadoSerie;
   if (serie.metrica === "repeticoes") {
@@ -210,7 +256,7 @@ function converterSerie(serie: SerieDraft): SerieExecutadaInput | null {
     tipo: serie.tipo,
     resultado,
     carga,
-    rpe,
+    ...(rpe !== undefined ? { rpe } : {}),
     concluidaEm: serie.concluidaEm ?? new Date().toISOString(),
     observacoes: serie.observacoes.trim() || undefined,
   };
@@ -702,6 +748,21 @@ export function TreinoEmAndamento({
 
       {aberto && (
         <div className="border-t border-line">
+          {!concluidoHoje && itensFoco.length > 0 && (
+            <div className="border-b border-line bg-surface-2/15 p-3">
+              <button
+                type="button"
+                onClick={abrirFoco}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-volt py-3 text-sm font-bold text-ink transition-colors hover:bg-volt-strong"
+              >
+                <PlayIcon className="h-4 w-4" />
+                Iniciar modo foco
+              </button>
+              <p className="mt-2 text-center text-xs text-muted">
+                Um exercício por vez, com o cronômetro de descanso em tela cheia.
+              </p>
+            </div>
+          )}
           {!concluidoHoje && (iniciadoEm || concluidas > 0 || timer) && (
             <div className="sticky top-[126px] z-[8] border-b border-line bg-bg/95 px-3 py-3 backdrop-blur-md">
               {timer ? (
@@ -734,21 +795,6 @@ export function TreinoEmAndamento({
                   </button>
                 </div>
               )}
-            </div>
-          )}
-          {!concluidoHoje && itensFoco.length > 0 && (
-            <div className="border-b border-line bg-surface-2/15 p-3">
-              <button
-                type="button"
-                onClick={abrirFoco}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-volt py-3 text-sm font-bold text-ink transition-colors hover:bg-volt-strong"
-              >
-                <PlayIcon className="h-4 w-4" />
-                Iniciar modo foco
-              </button>
-              <p className="mt-2 text-center text-xs text-muted">
-                Um exercício por vez, com o cronômetro de descanso em tela cheia.
-              </p>
             </div>
           )}
           <div className="space-y-3 bg-surface-2/15 p-3">
@@ -1503,7 +1549,11 @@ function SerieRow({
         </label>
         <label>
           <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-muted">
-            {serie.modoCarga === "externa" || serie.modoCarga === "assistida" ? "Kg" : "RPE"}
+            {serie.modoCarga === "externa" || serie.modoCarga === "assistida" ? (
+              "Kg"
+            ) : (
+              <>RPE <span className="text-muted/60">(opcional)</span></>
+            )}
           </span>
           {serie.modoCarga === "externa" || serie.modoCarga === "assistida" ? (
             <Input
@@ -1527,7 +1577,7 @@ function SerieRow({
       {(serie.modoCarga === "externa" || serie.modoCarga === "assistida") && (
         <div className="mt-2 grid grid-cols-[5rem_1fr] gap-2">
           <label>
-            <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-muted">RPE</span>
+            <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-muted">RPE <span className="text-muted/60">(opcional)</span></span>
             <Input
               inputMode="decimal"
               value={serie.rpe}

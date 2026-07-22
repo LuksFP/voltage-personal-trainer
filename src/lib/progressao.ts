@@ -7,7 +7,7 @@ export interface PontoProgressao {
   cargaKg: number;
   volumeKg: number;
   e1rmKg: number;
-  rpeMedio: number;
+  rpeMedio: number | null;
   repeticoesMax: number;
 }
 
@@ -37,6 +37,12 @@ export interface SugestaoCalculada {
   cargaSugeridaKg: number;
   rpeMedio: number;
   motivo: string;
+}
+
+function mediaRpe(series: { rpe?: number }[]): number | null {
+  const comRpe = series.filter((serie): serie is { rpe: number } => serie.rpe != null);
+  if (comRpe.length === 0) return null;
+  return comRpe.reduce((total, serie) => total + serie.rpe, 0) / comRpe.length;
 }
 
 function normalizarNome(nome: string): string {
@@ -75,7 +81,7 @@ function pontoDoHistorico(historico: HistoricoExercicioDetalhado): PontoProgress
     cargaKg: Math.max(...cargas),
     volumeKg: volumeExato(historico) ?? 0,
     e1rmKg: Math.max(...e1rm),
-    rpeMedio: series.reduce((total, serie) => total + serie.rpe, 0) / series.length,
+    rpeMedio: mediaRpe(series),
     repeticoesMax: Math.max(...repeticoes),
   };
 }
@@ -145,16 +151,19 @@ export function calcularSugestao(historico: HistoricoExercicio): SugestaoCalcula
   if (historico.formato !== "por-serie") return null;
   const ponto = pontoDoHistorico(historico);
   if (!ponto) return null;
+  // Sem RPE registrado não há como sugerir ajuste de carga por esforço.
+  const rpeMedio = ponto.rpeMedio;
+  if (rpeMedio == null) return null;
 
   let cargaSugeridaKg = ponto.cargaKg;
-  let motivo = `Manter ${ponto.cargaKg} kg: RPE médio ${ponto.rpeMedio.toFixed(1)} pede consolidação.`;
-  if (ponto.rpeMedio <= 8) {
+  let motivo = `Manter ${ponto.cargaKg} kg: RPE médio ${rpeMedio.toFixed(1)} pede consolidação.`;
+  if (rpeMedio <= 8) {
     const incremento = ponto.cargaKg < 20 ? 1 : ponto.cargaKg < 60 ? 2.5 : 5;
     cargaSugeridaKg = arredondarMeioKg(ponto.cargaKg + incremento);
-    motivo = `Subir ${incremento} kg: todas as séries ficaram com RPE médio ${ponto.rpeMedio.toFixed(1)}.`;
-  } else if (ponto.rpeMedio >= 9.5) {
+    motivo = `Subir ${incremento} kg: todas as séries ficaram com RPE médio ${rpeMedio.toFixed(1)}.`;
+  } else if (rpeMedio >= 9.5) {
     cargaSugeridaKg = arredondarMeioKg(ponto.cargaKg * 0.95);
-    motivo = `Reduzir cerca de 5%: RPE médio ${ponto.rpeMedio.toFixed(1)} indica esforço muito alto.`;
+    motivo = `Reduzir cerca de 5%: RPE médio ${rpeMedio.toFixed(1)} indica esforço muito alto.`;
   }
 
   return {
@@ -166,7 +175,7 @@ export function calcularSugestao(historico: HistoricoExercicio): SugestaoCalcula
     nome: historico.nome,
     cargaAtualKg: ponto.cargaKg,
     cargaSugeridaKg,
-    rpeMedio: ponto.rpeMedio,
+    rpeMedio,
     motivo,
   };
 }

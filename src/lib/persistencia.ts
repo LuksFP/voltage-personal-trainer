@@ -452,7 +452,8 @@ function migrarSerie(value: unknown): SerieExecutada | null {
   if (typeof id !== "string") return null;
   if (typeof ordem !== "number" || !Number.isInteger(ordem) || ordem < 1) return null;
   if (tipo !== "aquecimento" && tipo !== "trabalho") return null;
-  if (typeof rpe !== "number" || !Number.isFinite(rpe) || rpe < 1 || rpe > 10) {
+  // RPE é opcional; se vier, precisa ser válido (1–10).
+  if (rpe !== undefined && (typeof rpe !== "number" || !Number.isFinite(rpe) || rpe < 1 || rpe > 10)) {
     return null;
   }
   if (!isRecord(value.resultado) || !isRecord(value.carga)) return null;
@@ -507,7 +508,7 @@ function migrarSerie(value: unknown): SerieExecutada | null {
     tipo,
     resultado,
     carga,
-    rpe,
+    ...(typeof rpe === "number" ? { rpe } : {}),
     concluidaEm: optionalString(value, "concluidaEm"),
     observacoes: optionalString(value, "observacoes"),
   };

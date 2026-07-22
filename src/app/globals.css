@@ -80,3 +80,39 @@ body {
 .animate-rise {
   animation: rise 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+/* Tailwind v4 deixou de aplicar cursor:pointer em elementos clicáveis.
+   Restaura o padrão para tudo que é interativo/clicável quando habilitado. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+[role="tab"]:not([aria-disabled="true"]),
+[role="option"],
+[role="switch"]:not([aria-disabled="true"]),
+[role="menuitem"],
+[role="radio"]:not([aria-disabled="true"]),
+[role="checkbox"]:not([aria-disabled="true"]),
+a[href],
+label,
+select:not(:disabled),
+summary,
+input[type="checkbox"]:not(:disabled),
+input[type="radio"]:not(:disabled),
+input[type="range"]:not(:disabled),
+input[type="color"]:not(:disabled),
+input[type="submit"]:not(:disabled),
+input[type="reset"]:not(:disabled),
+input[type="button"]:not(:disabled),
+input[type="file"]:not(:disabled) {
+  cursor: pointer;
+}
+
+input[type="file"]:not(:disabled)::file-selector-button {
+  cursor: pointer;
+}
+
+button:disabled,
+select:disabled,
+input:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}

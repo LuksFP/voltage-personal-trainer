@@ -669,7 +669,10 @@ function validarRegistroTreino(input: RegistrarTreinoRealizadoInput): void {
         throw new Error("A ordem das séries precisa ser única e positiva.");
       }
       ordens.add(serie.ordem);
-      if (!Number.isFinite(serie.rpe) || serie.rpe < 1 || serie.rpe > 10) {
+      if (
+        serie.rpe !== undefined &&
+        (!Number.isFinite(serie.rpe) || serie.rpe < 1 || serie.rpe > 10)
+      ) {
         throw new Error("O RPE de cada série deve estar entre 1 e 10.");
       }
       if (

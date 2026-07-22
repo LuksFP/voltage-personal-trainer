@@ -471,7 +471,7 @@ export interface SerieExecutada {
   tipo: TipoSerieExecutada;
   resultado: ResultadoSerie;
   carga: CargaExecutada;
-  rpe: number;
+  rpe?: number; // opcional — nem toda execução registra percepção de esforço
   concluidaEm?: string;
   observacoes?: string;
 }

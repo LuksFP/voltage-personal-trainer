@@ -66,17 +66,18 @@ export function Progressao({ alunoId }: { alunoId: string }) {
     : 0;
 
   const pontosGrafico: ChartPoint[] = selecionada
-    ? selecionada.pontos.slice(-12).map((ponto) => ({
-        label: dataCurta(ponto.data),
-        value:
+    ? selecionada.pontos.slice(-12).flatMap((ponto) => {
+        const value =
           metrica === "carga"
             ? ponto.cargaKg
             : metrica === "volume"
               ? ponto.volumeKg
               : metrica === "e1rm"
                 ? ponto.e1rmKg
-                : ponto.rpeMedio,
-      }))
+                : ponto.rpeMedio;
+        // RPE pode não existir em alguns registros; nesses pontos, omite do gráfico.
+        return value == null ? [] : [{ label: dataCurta(ponto.data), value }];
+      })
     : [];
   const metricaAtual = METRICAS.find((item) => item.id === metrica) ?? METRICAS[0];
 
@@ -220,7 +221,9 @@ export function Progressao({ alunoId }: { alunoId: string }) {
                       <span className="text-muted">{numero(ponto.cargaKg, 1)} kg</span>
                       <span className="text-muted">{numero(ponto.volumeKg)} kg</span>
                       <span className="text-muted">{numero(ponto.e1rmKg, 1)} kg</span>
-                      <span className="text-muted">{numero(ponto.rpeMedio, 1)}</span>
+                      <span className="text-muted">
+                        {ponto.rpeMedio == null ? "—" : numero(ponto.rpeMedio, 1)}
+                      </span>
                     </div>
                   ))}
                 </div>
