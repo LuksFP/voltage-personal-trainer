@@ -602,20 +602,45 @@ export function TreinoEmAndamento({
   };
 
   const alternarConcluida = (exercicioId: string, serie: SerieDraft) => {
-    if (!serie.concluida) {
-      const mensagem = erroDaSerie(serie);
+    const exercicio = divisao.exercicios.find((item) => item.id === exercicioId);
+    // Ao marcar, completa os campos vazios com a prescrição do personal.
+    // Robusto para rascunhos antigos (salvos antes do pré-preenchimento).
+    const preenchimento: Partial<SerieDraft> = {};
+    if (!serie.concluida && exercicio) {
+      if (serie.metrica === "repeticoes" && serie.repeticoes.trim() === "") {
+        const reps = repeticoesPrescritas(exercicio.repeticoes);
+        if (reps) preenchimento.repeticoes = reps;
+      }
+      if (serie.metrica === "tempo" && serie.duracaoSegundos.trim() === "") {
+        const bloco = blocoPorExercicio.get(exercicioId);
+        if (bloco?.tipo === "circuito" && bloco.trabalhoSeg) {
+          preenchimento.duracaoSegundos = String(bloco.trabalhoSeg);
+        }
+      }
+      if (
+        (serie.modoCarga === "externa" || serie.modoCarga === "assistida") &&
+        serie.valorKg.trim() === ""
+      ) {
+        const carga = cargaPrescrita(exercicio.carga);
+        if (carga.modoCarga === "peso-corporal") preenchimento.modoCarga = "peso-corporal";
+        else if (carga.valorKg) preenchimento.valorKg = carga.valorKg;
+      }
+    }
+    const efetiva = { ...serie, ...preenchimento };
+    if (!efetiva.concluida) {
+      const mensagem = erroDaSerie(efetiva);
       if (mensagem) {
         setErro(`Série ${serie.ordem}: ${mensagem}`);
         return;
       }
     }
     alterarSerie(exercicioId, serie.id, {
+      ...preenchimento,
       concluida: !serie.concluida,
       concluidaEm: !serie.concluida ? new Date().toISOString() : undefined,
     });
     if (!serie.concluida) {
       const segundos = descansoPorExercicio.get(exercicioId);
-      const exercicio = divisao.exercicios.find((item) => item.id === exercicioId);
       if (segundos && exercicio) iniciarTimer(segundos, `Após ${exercicio.nome}`);
     }
   };
