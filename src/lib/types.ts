@@ -724,6 +724,17 @@ export interface MetasMacros {
   gorduras?: number; // g/dia
 }
 
+// Adesão diária: quais refeições do plano o aluno marcou como feitas num dia.
+export interface RegistroRefeicoesDia {
+  id: string;
+  alunoId: string;
+  planoId: string;
+  data: string; // YYYY-MM-DD local
+  refeicoesFeitas: string[]; // ids de RefeicaoPlano concluídas
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
 export interface PlanoAlimentar {
   id: string;
   alunoId: string;

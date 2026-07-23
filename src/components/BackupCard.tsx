@@ -37,6 +37,7 @@ export function BackupCard() {
     configuracoesHabitos,
     registrosHabitos,
     planosAlimentares,
+    registrosRefeicoes,
     bancoAlimentos,
     substituirTudo,
   } = useStore();
@@ -68,6 +69,7 @@ export function BackupCard() {
       configuracoesHabitos,
       registrosHabitos,
       planosAlimentares,
+      registrosRefeicoes,
       bancoAlimentos,
     });
     const blob = new Blob([json], { type: "application/json" });

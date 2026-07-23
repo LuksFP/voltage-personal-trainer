@@ -195,7 +195,7 @@ export default function PortalPage() {
 
             <MetasPortal alunoId={aluno.id} />
 
-            <NutricaoPortal alunoId={aluno.id} />
+            <NutricaoPortal alunoId={aluno.id} hoje={hoje} />
 
             <AnamnesePortal alunoId={aluno.id} />
 

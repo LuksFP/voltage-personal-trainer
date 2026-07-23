@@ -79,6 +79,7 @@ export function parseBackup(texto: string): StoreData {
     configuracoesHabitos: [],
     registrosHabitos: [],
     planosAlimentares: [],
+    registrosRefeicoes: [],
     bancoAlimentos: [],
   });
 }

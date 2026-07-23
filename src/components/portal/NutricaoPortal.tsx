@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { LeafIcon } from "@/components/icons";
+import { CheckIcon, LeafIcon } from "@/components/icons";
 import { PlanoAlimentarView } from "@/components/PlanoAlimentarView";
 import { MacrosPlanoVsMeta } from "@/components/MacrosPlanoVsMeta";
 import { ListaDeCompras } from "@/components/ListaDeCompras";
+import { cx } from "@/components/ui";
 import { distribuicaoMacros, temMetasDefinidas, totaisDoPlano } from "@/lib/nutricao";
 import { useStore } from "@/lib/store";
 
@@ -14,12 +15,17 @@ const CORES_MACRO: Record<string, string> = {
   gorduras: "bg-orange-400",
 };
 
-export function NutricaoPortal({ alunoId }: { alunoId: string }) {
+export function NutricaoPortal({ alunoId, hoje }: { alunoId: string; hoje: string }) {
   const store = useStore();
   const plano = store.planoAtivoDoAluno(alunoId);
   const [mostrarCompras, setMostrarCompras] = useState(false);
 
   if (!plano) return null;
+
+  const registroHoje = store.registroRefeicoesDoDia(alunoId, hoje);
+  const feitasHoje = registroHoje?.refeicoesFeitas ?? [];
+  const totalRefeicoes = plano.refeicoes.length;
+  const feitasCount = plano.refeicoes.filter((r) => feitasHoje.includes(r.id)).length;
 
   const fatias = distribuicaoMacros(plano.metas);
   const calculado = totaisDoPlano(plano, store.bancoAlimentos);
@@ -91,6 +97,65 @@ export function NutricaoPortal({ alunoId }: { alunoId: string }) {
                 {calculado.macros.gorduras}
               </span>
             </span>
+          </div>
+        )}
+
+        {totalRefeicoes > 0 && (
+          <div className="mt-4 rounded-xl border border-line bg-surface-2/25 p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted">
+                Refeições de hoje
+              </p>
+              <span className="text-xs font-semibold text-accent">
+                {feitasCount}/{totalRefeicoes}
+              </span>
+            </div>
+            <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-surface-2">
+              <div
+                className="h-full rounded-full bg-volt transition-all"
+                style={{ width: `${(feitasCount / totalRefeicoes) * 100}%` }}
+              />
+            </div>
+            <ul className="space-y-1.5">
+              {plano.refeicoes.map((refeicao) => {
+                const feita = feitasHoje.includes(refeicao.id);
+                return (
+                  <li key={refeicao.id}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        store.alternarRefeicaoFeita(alunoId, plano.id, hoje, refeicao.id)
+                      }
+                      className="flex w-full items-center gap-2.5 rounded-lg px-1.5 py-1.5 text-left transition-colors hover:bg-surface-2/60"
+                    >
+                      <span
+                        className={cx(
+                          "grid h-6 w-6 shrink-0 place-items-center rounded-md border transition-colors",
+                          feita
+                            ? "border-volt bg-volt text-ink"
+                            : "border-line text-transparent",
+                        )}
+                      >
+                        <CheckIcon className="h-3.5 w-3.5" />
+                      </span>
+                      <span
+                        className={cx(
+                          "min-w-0 flex-1 text-sm",
+                          feita ? "text-muted line-through" : "text-text",
+                        )}
+                      >
+                        {refeicao.nome}
+                      </span>
+                      {refeicao.horario && (
+                        <span className="shrink-0 text-xs font-semibold text-muted">
+                          {refeicao.horario}
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         )}
 

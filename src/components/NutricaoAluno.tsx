@@ -15,6 +15,7 @@ import { PlanoAlimentarForm } from "./PlanoAlimentarForm";
 import { PlanoAlimentarView } from "./PlanoAlimentarView";
 import { MacrosPlanoVsMeta } from "./MacrosPlanoVsMeta";
 import { ListaDeCompras } from "./ListaDeCompras";
+import { AdesaoRefeicoes } from "./AdesaoRefeicoes";
 import { Badge, Button, Card } from "./ui";
 import { LeafIcon, PencilIcon, PlusIcon, TrashIcon } from "./icons";
 
@@ -311,6 +312,8 @@ function PlanoCard({
 
         {aberto && (
           <div className="mt-4 space-y-4 border-t border-line pt-4">
+            {plano.status === "ativo" && <AdesaoRefeicoes alunoId={plano.alunoId} plano={plano} />}
+
             <MacrosPlanoVsMeta plano={plano} banco={banco} />
 
             <div>

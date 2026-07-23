@@ -16,6 +16,7 @@ import type {
   MetaAluno,
   PacoteSessoes,
   PlanoAlimentar,
+  RegistroRefeicoesDia,
   RefeicaoPlano,
   AlimentoRefeicao,
   AlimentoBanco,
@@ -958,6 +959,20 @@ function isPlanoAlimentar(value: unknown): value is PlanoAlimentar {
   );
 }
 
+function isRegistroRefeicoesDia(value: unknown): value is RegistroRefeicoesDia {
+  return (
+    isRecord(value) &&
+    hasString(value, "id") &&
+    hasString(value, "alunoId") &&
+    hasString(value, "planoId") &&
+    hasString(value, "data") &&
+    Array.isArray(value.refeicoesFeitas) &&
+    value.refeicoesFeitas.every((item) => typeof item === "string") &&
+    isIsoDateTime(value.criadoEm) &&
+    isIsoDateTime(value.atualizadoEm)
+  );
+}
+
 function isLembreteWhatsApp(value: unknown): value is LembreteWhatsApp {
   return (
     isRecord(value) &&
@@ -1191,6 +1206,13 @@ export function migrarStoreData(input: unknown, defaults: StoreData): StoreData 
       isPlanoAlimentar,
       defaults.planosAlimentares,
       (plano) => plano.id,
+    ),
+    registrosRefeicoes: uniqueCollection(
+      input,
+      "registrosRefeicoes",
+      isRegistroRefeicoesDia,
+      defaults.registrosRefeicoes,
+      (registro) => `${registro.alunoId}:${registro.data}`,
     ),
     bancoAlimentos: uniqueCollection(
       input,

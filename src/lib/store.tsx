@@ -29,6 +29,7 @@ import type {
   FasePrograma,
   ProgramaTreino,
   RegistroHabitosDiario,
+  RegistroRefeicoesDia,
   SerieExecutada,
   SolicitacaoSubstituicao,
   SugestaoProgressao,
@@ -132,6 +133,7 @@ export interface StoreData {
   configuracoesHabitos: ConfiguracaoHabitos[];
   registrosHabitos: RegistroHabitosDiario[];
   planosAlimentares: PlanoAlimentar[];
+  registrosRefeicoes: RegistroRefeicoesDia[];
   bancoAlimentos: AlimentoBanco[];
 }
 
@@ -384,6 +386,15 @@ interface StoreContextValue extends StoreData {
   arquivarPlanoAlimentar: (id: string) => PlanoAlimentar;
   reativarPlanoAlimentar: (id: string) => PlanoAlimentar;
   removePlanoAlimentar: (id: string) => void;
+  // adesão às refeições (marcadas pelo aluno)
+  registroRefeicoesDoDia: (alunoId: string, data: string) => RegistroRefeicoesDia | undefined;
+  alternarRefeicaoFeita: (
+    alunoId: string,
+    planoId: string,
+    data: string,
+    refeicaoId: string,
+  ) => void;
+  registrosRefeicoesDoAluno: (alunoId: string) => RegistroRefeicoesDia[];
   // banco de alimentos
   addAlimentoBanco: (input: CriarAlimentoBancoInput) => AlimentoBanco;
   updateAlimentoBanco: (id: string, input: CriarAlimentoBancoInput) => AlimentoBanco;
@@ -930,6 +941,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     configuracoesHabitos: [],
     registrosHabitos: [],
     planosAlimentares: [],
+    registrosRefeicoes: [],
     bancoAlimentos: [],
   });
   const [hydrated, setHydrated] = useState(false);
@@ -960,6 +972,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       configuracoesHabitos: [],
       registrosHabitos: [],
       planosAlimentares: planosAlimentaresSeed(),
+      registrosRefeicoes: [],
       bancoAlimentos: bancoAlimentosSeed,
     };
     let inicial: StoreData = seed;
@@ -990,6 +1003,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           configuracoesHabitos: [],
           registrosHabitos: [],
           planosAlimentares: [],
+          registrosRefeicoes: [],
           bancoAlimentos: bancoAlimentosSeed,
         });
       }
@@ -1043,6 +1057,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       configuracoesHabitos: data.configuracoesHabitos,
       registrosHabitos: data.registrosHabitos,
       planosAlimentares: data.planosAlimentares,
+      registrosRefeicoes: data.registrosRefeicoes,
       bancoAlimentos: data.bancoAlimentos,
 
       addAluno: (input) => {
@@ -1105,6 +1120,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             (registro) => registro.alunoId !== id,
           ),
           planosAlimentares: d.planosAlimentares.filter((plano) => plano.alunoId !== id),
+          registrosRefeicoes: d.registrosRefeicoes.filter(
+            (registro) => registro.alunoId !== id,
+          ),
         }));
       },
       getAluno: (id) => data.alunos.find((a) => a.id === id),
@@ -2349,6 +2367,46 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ...d,
           planosAlimentares: d.planosAlimentares.filter((plano) => plano.id !== id),
         })),
+
+      // ── adesão às refeições (marcadas pelo aluno no portal) ────────────
+      registrosRefeicoesDoAluno: (alunoId) =>
+        data.registrosRefeicoes
+          .filter((registro) => registro.alunoId === alunoId)
+          .sort((a, b) => b.data.localeCompare(a.data)),
+      registroRefeicoesDoDia: (alunoId, dataDia) =>
+        data.registrosRefeicoes.find(
+          (registro) => registro.alunoId === alunoId && registro.data === dataDia,
+        ),
+      alternarRefeicaoFeita: (alunoId, planoId, dataDia, refeicaoId) =>
+        setData((d) => {
+          const existente = d.registrosRefeicoes.find(
+            (registro) => registro.alunoId === alunoId && registro.data === dataDia,
+          );
+          const agora = new Date().toISOString();
+          if (!existente) {
+            const novo: RegistroRefeicoesDia = {
+              id: uid("refdia"),
+              alunoId,
+              planoId,
+              data: dataDia,
+              refeicoesFeitas: [refeicaoId],
+              criadoEm: agora,
+              atualizadoEm: agora,
+            };
+            return { ...d, registrosRefeicoes: [novo, ...d.registrosRefeicoes] };
+          }
+          const feitas = existente.refeicoesFeitas.includes(refeicaoId)
+            ? existente.refeicoesFeitas.filter((id) => id !== refeicaoId)
+            : [...existente.refeicoesFeitas, refeicaoId];
+          return {
+            ...d,
+            registrosRefeicoes: d.registrosRefeicoes.map((registro) =>
+              registro.id === existente.id
+                ? { ...registro, planoId, refeicoesFeitas: feitas, atualizadoEm: agora }
+                : registro,
+            ),
+          };
+        }),
 
       // ── banco de alimentos ────────────────────────────────────────────
       addAlimentoBanco: (input) => {
