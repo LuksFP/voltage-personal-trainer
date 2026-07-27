@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { useStore } from "@/lib/store";
 import { Button, Card, Field, Input, Textarea } from "@/components/ui";
 import { BackupCard } from "@/components/BackupCard";
+import { PerfilPublicoCard } from "@/components/PerfilPublicoCard";
 import { Avatar } from "../page";
 
 export default function PerfilPage() {
@@ -65,6 +66,8 @@ export default function PerfilPage() {
           </div>
         </form>
       </Card>
+
+      <PerfilPublicoCard />
 
       <BackupCard />
     </div>

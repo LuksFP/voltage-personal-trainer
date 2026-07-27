@@ -32,6 +32,7 @@ export type OrigemInteressado =
   | "whatsapp"
   | "site"
   | "evento"
+  | "catalogo"
   | "outro";
 
 export type StatusInteressado =
@@ -78,6 +79,8 @@ export interface Interessado {
   objetivo?: Objetivo;
   origem: OrigemInteressado;
   origemDetalhe?: string;
+  // Preenchido quando o lead veio do catálogo: qual perfil público ele abriu.
+  personalPublicoId?: string;
   status: StatusInteressado;
   proximoFollowUp?: string; // YYYY-MM-DD local
   historicoContatos: RegistroContatoInteressado[];
@@ -86,6 +89,34 @@ export interface Interessado {
   motivoPerda?: string;
   convertidoAlunoId?: string;
   convertidoEm?: string;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+/* ---------- Catálogo de personais ---------- */
+
+export type ModalidadeAtendimento = "presencial" | "online" | "ambos";
+
+/** O que o aluno vê no catálogo. É o cartão de visita do personal. */
+export interface PersonalPublico {
+  id: string;
+  /** Liga o perfil à conta do personal (auth mockado usa e-mail como chave). */
+  email: string;
+  nome: string;
+  bio: string;
+  especialidades: Objetivo[];
+  modalidade: ModalidadeAtendimento;
+  cidade: string;
+  bairros?: string[];
+  precoMensal?: number;
+  precoAvulso?: number;
+  cref?: string;
+  anosExperiencia?: number;
+  /** Média das avaliações (0 a 5). Sem avaliação ainda, fica indefinida. */
+  nota?: number;
+  totalAvaliacoes?: number;
+  /** Personal lotado sai da busca sem perder o perfil. */
+  aceitandoAlunos: boolean;
   criadoEm: string;
   atualizadoEm: string;
 }

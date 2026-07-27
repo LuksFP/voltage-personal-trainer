@@ -14,6 +14,7 @@ import { ConquistasPortal } from "@/components/portal/ConquistasPortal";
 import { PortalEvolucao } from "@/components/portal/PortalEvolucao";
 import { PortalHistorico } from "@/components/portal/PortalHistorico";
 import { PerfilAlunoApp } from "./PerfilAlunoApp";
+import { CatalogoPersonais } from "./CatalogoPersonais";
 import { InstalarApp } from "./InstalarApp";
 import { cx } from "@/components/ui";
 import {
@@ -22,15 +23,17 @@ import {
   DumbbellIcon,
   FlameIcon,
   GridIcon,
+  SearchIcon,
   UsersIcon,
 } from "@/components/icons";
 
-type Aba = "hoje" | "treino" | "evolucao" | "perfil";
+type Aba = "hoje" | "treino" | "evolucao" | "personais" | "perfil";
 
 const ABAS: { id: Aba; label: string; icon: typeof GridIcon }[] = [
   { id: "hoje", label: "Hoje", icon: GridIcon },
   { id: "treino", label: "Treino", icon: DumbbellIcon },
   { id: "evolucao", label: "Evolução", icon: ChartIcon },
+  { id: "personais", label: "Personais", icon: SearchIcon },
   { id: "perfil", label: "Perfil", icon: UsersIcon },
 ];
 
@@ -273,6 +276,8 @@ export function AlunoAppHome() {
           </div>
         )}
 
+        {aba === "personais" && <CatalogoPersonais />}
+
         {aba === "perfil" && <PerfilAlunoApp />}
       </main>
 
@@ -281,7 +286,7 @@ export function AlunoAppHome() {
         className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg/95 backdrop-blur-md"
         aria-label="Seções do app"
       >
-        <div className="mx-auto grid max-w-lg grid-cols-4 px-2 py-2">
+        <div className="mx-auto grid max-w-lg grid-cols-5 px-2 py-2">
           {ABAS.map((item) => {
             const Icon = item.icon;
             const ativa = aba === item.id;

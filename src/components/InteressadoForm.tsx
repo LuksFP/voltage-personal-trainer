@@ -12,6 +12,9 @@ export type OrigemInteressadoForm =
   | "whatsapp"
   | "site"
   | "evento"
+  // Só chega editando um lead que veio do catálogo do app — o personal
+  // não escolhe essa origem na mão.
+  | "catalogo"
   | "outro";
 
 export type InteressadoFormValues = {
@@ -225,6 +228,9 @@ export function InteressadoForm({
             aria-describedby={erros.origem ? "interessado-origem-select-erro" : undefined}
           >
             <option value="">Selecione…</option>
+            {values.origem === "catalogo" && (
+              <option value="catalogo">Catálogo do app</option>
+            )}
             {ORIGENS_INTERESSADO.map((origem) => (
               <option key={origem.value} value={origem.value}>
                 {origem.label}

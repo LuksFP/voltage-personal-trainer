@@ -17,6 +17,7 @@ export const ORIGENS_INTERESSADO = [
   "whatsapp",
   "site",
   "evento",
+  "catalogo",
   "outro",
 ] as const satisfies readonly OrigemInteressado[];
 
@@ -61,6 +62,7 @@ export const ORIGEM_INTERESSADO_LABEL: Record<OrigemInteressado, string> = {
   whatsapp: "WhatsApp",
   site: "Site",
   evento: "Evento",
+  catalogo: "Catálogo do app",
   outro: "Outro",
 };
 
@@ -103,6 +105,7 @@ export type CriarInteressadoInput = Pick<
   | "objetivo"
   | "origem"
   | "origemDetalhe"
+  | "personalPublicoId"
   | "proximoFollowUp"
   | "observacoes"
 >;
@@ -314,6 +317,7 @@ export function normalizarCriarInteressadoInput(
     ? validarDataInteressado(input.proximoFollowUp.trim(), "a data do follow-up")
     : undefined;
   const observacoes = textoOpcional(input.observacoes, "as observações", 2_000);
+  const personalPublicoId = textoOpcional(input.personalPublicoId, "o perfil do catálogo", 160);
   validarOrigemDetalhe(input.origem, origemDetalhe);
 
   return {
@@ -323,6 +327,7 @@ export function normalizarCriarInteressadoInput(
     ...(input.objetivo ? { objetivo: input.objetivo } : {}),
     origem: input.origem,
     ...(origemDetalhe ? { origemDetalhe } : {}),
+    ...(personalPublicoId ? { personalPublicoId } : {}),
     ...(proximoFollowUp ? { proximoFollowUp } : {}),
     ...(observacoes ? { observacoes } : {}),
   };
@@ -903,6 +908,7 @@ export function isInteressado(value: unknown): value is Interessado {
     !ehOrigemInteressado(value.origem) ||
     !isOptionalNonBlankString(value.origemDetalhe, 160) ||
     (value.origem === "outro" && !isNonBlankString(value.origemDetalhe, 160)) ||
+    !isOptionalNonBlankString(value.personalPublicoId, 160) ||
     !ehStatusInteressado(value.status) ||
     (value.proximoFollowUp !== undefined && !isDataLocal(value.proximoFollowUp)) ||
     !Array.isArray(value.historicoContatos) ||

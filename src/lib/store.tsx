@@ -10,6 +10,7 @@ import {
 } from "react";
 import type {
   AlimentoBanco,
+  PersonalPublico,
   Aluno,
   AnamneseDigital,
   Avaliacao,
@@ -97,12 +98,17 @@ import {
   somarDiasIso,
 } from "./agenda";
 import {
+  normalizarPerfilPublicoInput,
+  type SalvarPerfilPublicoInput,
+} from "./catalogo";
+import {
   alunosSeed,
   avaliacoesSeed,
   bancoAlimentosSeed,
   bibliotecaSeed,
   historicoExerciciosSeed,
   pagamentosSeed,
+  perfisPublicosSeed,
   planosAlimentaresSeed,
   sessoesSeed,
   treinosSeed,
@@ -135,6 +141,7 @@ export interface StoreData {
   planosAlimentares: PlanoAlimentar[];
   registrosRefeicoes: RegistroRefeicoesDia[];
   bancoAlimentos: AlimentoBanco[];
+  perfisPublicos: PersonalPublico[];
 }
 
 export type CriarAlunoInput = CriarAlunoConversaoInput;
@@ -400,6 +407,11 @@ interface StoreContextValue extends StoreData {
   updateAlimentoBanco: (id: string, input: CriarAlimentoBancoInput) => AlimentoBanco;
   removeAlimentoBanco: (id: string) => void;
   getAlimentoBanco: (id: string) => AlimentoBanco | undefined;
+  // catálogo de personais (perfil público)
+  perfilPublicoPorEmail: (email: string) => PersonalPublico | undefined;
+  perfilPublicoPorId: (id: string) => PersonalPublico | undefined;
+  salvarPerfilPublico: (input: SalvarPerfilPublicoInput) => PersonalPublico;
+  removerPerfilPublico: (id: string) => void;
   // check-in semanal
   checkinsDoAluno: (alunoId: string) => CheckinSemanal[];
   checkinDaSemana: (alunoId: string, semanaInicio: string) => CheckinSemanal | undefined;
@@ -943,6 +955,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     planosAlimentares: [],
     registrosRefeicoes: [],
     bancoAlimentos: [],
+    perfisPublicos: [],
   });
   const [hydrated, setHydrated] = useState(false);
   const [persistenciaLiberada, setPersistenciaLiberada] = useState(false);
@@ -974,6 +987,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       planosAlimentares: planosAlimentaresSeed(),
       registrosRefeicoes: [],
       bancoAlimentos: bancoAlimentosSeed,
+      perfisPublicos: perfisPublicosSeed,
     };
     let inicial: StoreData = seed;
     let podePersistir = true;
@@ -1005,6 +1019,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           planosAlimentares: [],
           registrosRefeicoes: [],
           bancoAlimentos: bancoAlimentosSeed,
+          perfisPublicos: perfisPublicosSeed,
         });
       }
     } catch (error) {
@@ -1061,6 +1076,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       planosAlimentares: data.planosAlimentares,
       registrosRefeicoes: data.registrosRefeicoes,
       bancoAlimentos: data.bancoAlimentos,
+      perfisPublicos: data.perfisPublicos,
 
       addAluno: (input) => {
         const aluno: Aluno = {
@@ -2442,6 +2458,42 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           bancoAlimentos: d.bancoAlimentos.filter((alimento) => alimento.id !== id),
         })),
       getAlimentoBanco: (id) => data.bancoAlimentos.find((alimento) => alimento.id === id),
+
+      // ── catálogo de personais ─────────────────────────────────────────
+      perfilPublicoPorEmail: (email) => {
+        const chave = email.trim().toLowerCase();
+        return data.perfisPublicos.find((perfil) => perfil.email.toLowerCase() === chave);
+      },
+      perfilPublicoPorId: (id) => data.perfisPublicos.find((perfil) => perfil.id === id),
+      salvarPerfilPublico: (input) => {
+        const dados = normalizarPerfilPublicoInput(input);
+        const chave = dados.email.toLowerCase();
+        const existente = data.perfisPublicos.find(
+          (perfil) => perfil.email.toLowerCase() === chave,
+        );
+        const agora = new Date().toISOString();
+        // Um perfil por conta: salvar de novo atualiza o que já existe.
+        const perfil: PersonalPublico = {
+          ...dados,
+          id: existente?.id ?? uid("perfil"),
+          nota: existente?.nota,
+          totalAvaliacoes: existente?.totalAvaliacoes,
+          criadoEm: existente?.criadoEm ?? agora,
+          atualizadoEm: agora,
+        };
+        setData((d) => ({
+          ...d,
+          perfisPublicos: existente
+            ? d.perfisPublicos.map((item) => (item.id === perfil.id ? perfil : item))
+            : [perfil, ...d.perfisPublicos],
+        }));
+        return perfil;
+      },
+      removerPerfilPublico: (id) =>
+        setData((d) => ({
+          ...d,
+          perfisPublicos: d.perfisPublicos.filter((perfil) => perfil.id !== id),
+        })),
 
       checkinsDoAluno: (alunoId) =>
         data.checkinsSemanais

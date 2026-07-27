@@ -20,6 +20,9 @@ import type {
   RefeicaoPlano,
   AlimentoRefeicao,
   AlimentoBanco,
+  ModalidadeAtendimento,
+  Objetivo,
+  PersonalPublico,
   CategoriaAlimento,
   UnidadeMedidaAlimento,
   MetasMacros,
@@ -44,7 +47,7 @@ import { ehPerguntaParQId, PERGUNTAS_PARQ } from "./anamnese";
 import { ehMedidaCorporalMeta } from "./metas";
 import { isInteressado } from "./interessados";
 
-export const CURRENT_SCHEMA_VERSION = 17;
+export const CURRENT_SCHEMA_VERSION = 18;
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -1075,6 +1078,52 @@ function mappedCollection<T>(
   });
 }
 
+const OBJETIVOS_PERFIL = new Set<Objetivo>([
+  "Hipertrofia",
+  "Emagrecimento",
+  "Condicionamento",
+  "Força",
+  "Reabilitação",
+  "Saúde geral",
+]);
+
+const MODALIDADES_PERFIL = new Set<ModalidadeAtendimento>(["presencial", "online", "ambos"]);
+
+function ehPrecoOpcional(value: unknown): boolean {
+  return value === undefined || (typeof value === "number" && Number.isFinite(value) && value > 0);
+}
+
+function isPersonalPublico(value: unknown): value is PersonalPublico {
+  return (
+    isRecord(value) &&
+    hasString(value, "id") &&
+    isNonBlankString(value.email) &&
+    isNonBlankString(value.nome) &&
+    isNonBlankString(value.bio) &&
+    Array.isArray(value.especialidades) &&
+    value.especialidades.length > 0 &&
+    value.especialidades.every((item) => OBJETIVOS_PERFIL.has(item as Objetivo)) &&
+    MODALIDADES_PERFIL.has(value.modalidade as ModalidadeAtendimento) &&
+    isNonBlankString(value.cidade) &&
+    (value.bairros === undefined ||
+      (Array.isArray(value.bairros) && value.bairros.every(isNonBlankString))) &&
+    ehPrecoOpcional(value.precoMensal) &&
+    ehPrecoOpcional(value.precoAvulso) &&
+    hasOptionalString(value, "cref") &&
+    (value.anosExperiencia === undefined ||
+      (typeof value.anosExperiencia === "number" &&
+        Number.isInteger(value.anosExperiencia) &&
+        value.anosExperiencia >= 0)) &&
+    (value.nota === undefined ||
+      (typeof value.nota === "number" && value.nota >= 0 && value.nota <= 5)) &&
+    (value.totalAvaliacoes === undefined ||
+      (typeof value.totalAvaliacoes === "number" && value.totalAvaliacoes >= 0)) &&
+    typeof value.aceitandoAlunos === "boolean" &&
+    isIsoDateTime(value.criadoEm) &&
+    isIsoDateTime(value.atualizadoEm)
+  );
+}
+
 export function migrarStoreData(input: unknown, defaults: StoreData): StoreData {
   if (!isRecord(input)) throw new Error("A base de dados não é um objeto válido.");
 
@@ -1220,6 +1269,13 @@ export function migrarStoreData(input: unknown, defaults: StoreData): StoreData 
       isAlimentoBanco,
       defaults.bancoAlimentos,
       (alimento) => alimento.id,
+    ),
+    perfisPublicos: uniqueCollection(
+      input,
+      "perfisPublicos",
+      isPersonalPublico,
+      defaults.perfisPublicos,
+      (perfil) => perfil.email.toLowerCase(),
     ),
   };
 }

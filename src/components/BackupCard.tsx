@@ -39,6 +39,7 @@ export function BackupCard() {
     planosAlimentares,
     registrosRefeicoes,
     bancoAlimentos,
+    perfisPublicos,
     substituirTudo,
   } = useStore();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -71,6 +72,7 @@ export function BackupCard() {
       planosAlimentares,
       registrosRefeicoes,
       bancoAlimentos,
+      perfisPublicos,
     });
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);

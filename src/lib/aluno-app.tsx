@@ -23,6 +23,13 @@ import type { Aluno, Treino } from "./types";
 
 const CONTA_KEY = "pt.aluno.v1";
 
+/** Aula experimental que o aluno pediu a um personal do catálogo. */
+export interface PedidoAula {
+  personalPublicoId: string;
+  interessadoId: string;
+  em: string;
+}
+
 export interface ContaAluno {
   alunoId: string;
   nome: string;
@@ -30,6 +37,8 @@ export interface ContaAluno {
   /** Quantas vezes o aluno pediu outro treino — muda as escolhas do gerador. */
   variacao: number;
   criadaEm: string;
+  /** Contas criadas antes do catálogo não têm esta lista — trate como vazia. */
+  pedidos?: PedidoAula[];
 }
 
 export interface NovaContaAluno {
@@ -57,6 +66,9 @@ interface AlunoAppContextValue {
   /** Recria o perfil no store a partir da conta salva (caso "perfil-perdido"). */
   recriarPerfil: () => void;
   apagarConta: () => void;
+  /** Pedidos de aula experimental já enviados pelo catálogo. */
+  pedidos: PedidoAula[];
+  registrarPedido: (pedido: PedidoAula) => void;
 }
 
 const AlunoAppContext = createContext<AlunoAppContextValue | null>(null);
@@ -159,6 +171,14 @@ export function AlunoAppProvider({ children }: { children: ReactNode }) {
       apagarConta: () => {
         if (conta && aluno) removeAluno(conta.alunoId);
         persistir(null);
+      },
+      pedidos: conta?.pedidos ?? [],
+      registrarPedido: (pedido) => {
+        if (!conta) return;
+        const anteriores = (conta.pedidos ?? []).filter(
+          (item) => item.personalPublicoId !== pedido.personalPublicoId,
+        );
+        persistir({ ...conta, pedidos: [pedido, ...anteriores] });
       },
     };
   }, [conta, aluno, situacao, biblioteca, addAluno, updateAluno, removeAluno, addTreino, updateTreino]);

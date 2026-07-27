@@ -81,6 +81,7 @@ export function parseBackup(texto: string): StoreData {
     planosAlimentares: [],
     registrosRefeicoes: [],
     bancoAlimentos: [],
+    perfisPublicos: [],
   });
 }
 
