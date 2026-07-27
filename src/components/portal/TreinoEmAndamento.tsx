@@ -276,6 +276,7 @@ export function TreinoEmAndamento({
   divisao,
   hoje,
   aberturaInicial,
+  semPersonal = false,
 }: {
   alunoId: string;
   treinoId: string;
@@ -283,6 +284,9 @@ export function TreinoEmAndamento({
   divisao: Divisao;
   hoje: string;
   aberturaInicial: boolean;
+  /** App do aluno sem personal vinculado: esconde pedido de troca e envio de vídeo,
+   *  que dependem de alguém do outro lado para responder. */
+  semPersonal?: boolean;
 }) {
   const {
     sessoes,
@@ -935,26 +939,29 @@ export function TreinoEmAndamento({
                                   <PlayIcon className="h-3.5 w-3.5" /> Como fazer
                                 </a>
                               )}
-                              {solicitacaoPendente ? (
-                                <span className="rounded-full bg-orange-500/10 px-2 py-1 text-[10px] font-bold text-orange-300">
-                                  Troca solicitada
-                                </span>
-                              ) : (
+                              {!semPersonal &&
+                                (solicitacaoPendente ? (
+                                  <span className="rounded-full bg-orange-500/10 px-2 py-1 text-[10px] font-bold text-orange-300">
+                                    Troca solicitada
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => setExercicioTroca(exercicio)}
+                                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold text-muted hover:bg-surface-2 hover:text-accent"
+                                  >
+                                    <SwapIcon className="h-3.5 w-3.5" /> Pedir troca
+                                  </button>
+                                ))}
+                              {!semPersonal && (
                                 <button
                                   type="button"
-                                  onClick={() => setExercicioTroca(exercicio)}
+                                  onClick={() => setExercicioVideo(exercicio)}
                                   className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold text-muted hover:bg-surface-2 hover:text-accent"
                                 >
-                                  <SwapIcon className="h-3.5 w-3.5" /> Pedir troca
+                                  <VideoIcon className="h-3.5 w-3.5" /> Enviar vídeo
                                 </button>
                               )}
-                              <button
-                                type="button"
-                                onClick={() => setExercicioVideo(exercicio)}
-                                className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold text-muted hover:bg-surface-2 hover:text-accent"
-                              >
-                                <VideoIcon className="h-3.5 w-3.5" /> Enviar vídeo
-                              </button>
                             </div>
                           </div>
 
@@ -1309,7 +1316,9 @@ export function TreinoEmAndamento({
                 <>
                   <h3 className="font-display text-2xl font-bold">Como foi o treino?</h3>
                   <p className="mt-1 text-sm text-muted">
-                    Seu feedback ajuda o personal a ajustar as cargas.
+                    {semPersonal
+                      ? "Fica registrado no seu histórico e guia a carga do próximo treino."
+                      : "Seu feedback ajuda o personal a ajustar as cargas."}
                   </p>
                   <div className="mt-5">
                     <FeedbackForm

@@ -323,6 +323,8 @@ const catalogo: Record<GrupoMuscular, [string, string, string][]> = {
     ["Crossover", "Polia", "Puxe as polias juntando as mãos à frente, contraia o peito no fim."],
     ["Crucifixo na máquina", "Máquina", "Abra e feche controlando, sem estender demais o ombro."],
     ["Flexão de braço", "Peso corporal", "Corpo alinhado, desça até quase tocar o chão, suba estendendo os cotovelos."],
+    ["Flexão inclinada", "Peso corporal", "Mãos apoiadas num banco/sofá; versão mais leve da flexão, ótima pra começar."],
+    ["Crucifixo no chão com halteres", "Halteres", "Deitado no chão, abra os braços até o cotovelo tocar o piso e feche contraindo o peito."],
   ],
   Costas: [
     ["Barra fixa", "Peso corporal", "Pegada pronada, puxe o queixo acima da barra, desça controlando."],
@@ -330,6 +332,8 @@ const catalogo: Record<GrupoMuscular, [string, string, string][]> = {
     ["Remada curvada", "Barra", "Tronco inclinado, puxe a barra ao abdômen mantendo a coluna neutra."],
     ["Remada baixa", "Polia", "Puxe o triângulo ao abdômen, aperte as escápulas no fim."],
     ["Remada unilateral", "Halter", "Apoio no banco, puxe o halter à cintura, cotovelo rente ao corpo."],
+    ["Remada na mesa", "Peso corporal", "Deite sob uma mesa firme, segure a borda e puxe o peito até ela, corpo reto."],
+    ["Remada curvada com halteres", "Halteres", "Tronco inclinado, puxe os dois halteres à cintura, escápulas juntas no fim."],
   ],
   Pernas: [
     ["Agachamento livre", "Barra", "Desça até coxas paralelas, joelhos alinhados aos pés, tronco firme."],
@@ -337,46 +341,60 @@ const catalogo: Record<GrupoMuscular, [string, string, string][]> = {
     ["Cadeira extensora", "Máquina", "Estenda os joelhos, segure 1s no topo, desça devagar."],
     ["Mesa flexora", "Máquina", "Flexione os joelhos trazendo o calcanhar ao glúteo."],
     ["Afundo", "Halteres", "Passo à frente, desça o joelho de trás, empurre com a perna da frente."],
+    ["Agachamento livre sem peso", "Peso corporal", "Pés na largura dos ombros, desça até coxas paralelas mantendo o calcanhar no chão."],
+    ["Agachamento búlgaro", "Peso corporal", "Pé de trás apoiado num banco, desça na perna da frente até 90°."],
+    ["Stiff com halteres", "Halteres", "Joelhos semiflexionados, desça os halteres rente à perna alongando o posterior."],
   ],
   Glúteos: [
     ["Elevação pélvica", "Barra", "Apoie as costas no banco, suba o quadril contraindo o glúteo no topo."],
     ["Cadeira abdutora", "Máquina", "Abra as pernas contra a resistência, controle a volta."],
     ["Coice na polia", "Polia", "Estenda o quadril para trás, contraia o glúteo, sem arquear a lombar."],
+    ["Ponte de glúteo no chão", "Peso corporal", "Deitado, pés no chão, suba o quadril e aperte o glúteo 1s no topo."],
+    ["Coice de quatro apoios", "Peso corporal", "De quatro, estenda uma perna para trás sem arquear a lombar."],
   ],
   Ombro: [
     ["Desenvolvimento com halteres", "Halteres", "Empurre acima da cabeça sem travar, desça até a linha das orelhas."],
     ["Elevação lateral", "Halteres", "Suba os braços até a linha dos ombros, cotovelo levemente flexionado."],
     ["Elevação frontal", "Halteres", "Suba à frente até a altura dos ombros, sem balançar o tronco."],
     ["Remada alta", "Barra", "Puxe a barra ao queixo com os cotovelos altos."],
+    ["Flexão pique", "Peso corporal", "Quadril alto formando um V, desça a cabeça em direção ao chão empurrando com o ombro."],
   ],
   Bíceps: [
     ["Rosca direta", "Barra", "Cotovelos fixos ao lado do corpo, suba a barra contraindo o bíceps."],
     ["Rosca alternada", "Halteres", "Alterne os braços, gire o punho (supinação) ao subir."],
     ["Rosca scott", "Banco Scott", "Apoie os braços no banco, suba controlando sem impulso."],
+    ["Rosca martelo", "Halteres", "Punho neutro (polegar pra cima), suba sem balançar o corpo."],
   ],
   Tríceps: [
     ["Tríceps corda", "Polia", "Estenda os cotovelos abrindo a corda no fim do movimento."],
     ["Tríceps testa", "Barra W", "Desça a barra até a testa, estenda apenas o cotovelo."],
     ["Mergulho no banco", "Peso corporal", "Desça o corpo flexionando os cotovelos, suba estendendo."],
+    ["Flexão fechada", "Peso corporal", "Mãos na largura do peito, cotovelos rente ao corpo ao descer."],
   ],
   Abdômen: [
     ["Prancha", "Peso corporal", "Antebraços no chão, corpo reto, segure contraindo o abdômen."],
     ["Abdominal supra", "Peso corporal", "Suba os ombros do chão contraindo o abdômen, sem puxar o pescoço."],
     ["Elevação de pernas", "Peso corporal", "Deitado, suba as pernas estendidas até 90°, desça sem tocar o chão."],
+    ["Prancha lateral", "Peso corporal", "Apoio no antebraço e no pé, quadril alto, segure sem deixar cair."],
+    ["Abdominal remador", "Peso corporal", "Suba tronco e joelhos ao mesmo tempo, encontrando-se no meio."],
   ],
   Panturrilha: [
     ["Panturrilha em pé", "Máquina", "Suba na ponta dos pés ao máximo, desça alongando."],
     ["Panturrilha sentado", "Máquina", "Foco no sóleo, suba e desça controlando a amplitude."],
+    ["Panturrilha no degrau", "Peso corporal", "Ponta do pé num degrau, desça o calcanhar alongando e suba ao máximo."],
   ],
   Cardio: [
     ["Corrida na esteira", "Esteira", "Mantenha ritmo constante; ajuste inclinação conforme o objetivo."],
     ["Bike ergométrica", "Bike", "Cadência estável, ajuste a carga para manter a FC alvo."],
     ["Pular corda", "Corda", "Saltos curtos na ponta dos pés, punhos girando a corda."],
     ["Remo ergômetro", "Remo", "Empurre com as pernas, puxe com as costas, retorne controlando."],
+    ["Polichinelo", "Peso corporal", "Abra e feche pernas e braços em ritmo constante, aterrissando leve."],
+    ["Escalador", "Peso corporal", "Na prancha alta, traga os joelhos ao peito alternando rápido."],
   ],
   "Corpo todo": [
     ["Burpee", "Peso corporal", "Agache, prancha, flexão, salte para cima explodindo."],
     ["Kettlebell swing", "Kettlebell", "Balanço com o quadril (não com os braços) até a altura do peito."],
+    ["Agachamento com salto", "Peso corporal", "Agache e salte explodindo; aterrisse na ponta dos pés amortecendo."],
   ],
 };
 

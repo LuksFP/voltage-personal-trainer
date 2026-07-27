@@ -1036,7 +1036,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     return {
       schemaVersion: data.schemaVersion,
-      alunos: data.alunos,
+      // Alunos com conta própria no app não pertencem à carteira do personal.
+      // getAluno() continua enxergando todos — o app/portal depende disso.
+      alunos: data.alunos.filter((aluno) => !aluno.contaApp),
       interessados: data.interessados,
       anamneses: data.anamneses,
       metasAluno: data.metasAluno,
@@ -2517,7 +2519,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       sincronizarLembretesWhatsApp: (hoje) => {
         const candidatos = gerarCandidatosLembrete(
           {
-            alunos: data.alunos,
+            alunos: data.alunos.filter((aluno) => !aluno.contaApp),
             sessoes: data.sessoes,
             avaliacoes: data.avaliacoes,
             pagamentos: data.pagamentos,

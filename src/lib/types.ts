@@ -20,6 +20,9 @@ export interface Aluno {
   observacoes?: string;
   ativo: boolean;
   criadoEm: string;
+  // Aluno que criou a própria conta pelo app (/app), sem personal vinculado.
+  // Não entra nas listas, relatórios, cobranças nem lembretes do personal.
+  contaApp?: boolean;
 }
 
 export type OrigemInteressado =
