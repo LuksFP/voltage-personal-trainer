@@ -275,6 +275,7 @@ export function AlunoAppHome() {
                       hoje={hoje}
                       aberturaInicial={divisao.id === divisaoDeHoje?.id && !concluidoHoje}
                       semPersonal={!vinculado}
+                      preferencias={conta.preferencias}
                     />
                   ))}
               </div>

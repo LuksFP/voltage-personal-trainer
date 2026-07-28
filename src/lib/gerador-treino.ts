@@ -60,6 +60,54 @@ const EXPLOSIVOS = new Set([
   "Remada alta",
 ]);
 
+function normalizar(nome: string): string {
+  return nome
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+/** O exercício pode entrar no treino de quem tem esse local/objetivo? */
+function cabeNoContexto(
+  item: ExercicioBiblioteca,
+  prefs: Pick<PreferenciasTreino, "local" | "objetivo">,
+): boolean {
+  if (prefs.local === "casa" && !EQUIPAMENTO_CASA.has(item.equipamento ?? "")) return false;
+  if (prefs.objetivo === "Reabilitação" && EXPLOSIVOS.has(item.nome)) return false;
+  return true;
+}
+
+/**
+ * Outros exercícios que treinam o mesmo grupo do atual — é a lista que o aluno
+ * sem personal vê quando o aparelho está ocupado ou o movimento incomoda.
+ * Fora: o próprio exercício e o que já está na divisão de hoje.
+ */
+export function alternativasDoExercicio(
+  biblioteca: ExercicioBiblioteca[],
+  atual: { nome: string; bibliotecaId?: string },
+  prefs: Pick<PreferenciasTreino, "local" | "objetivo">,
+  jaNaDivisao: readonly string[] = [],
+): ExercicioBiblioteca[] {
+  const nomeAtual = normalizar(atual.nome);
+  const referencia =
+    (atual.bibliotecaId ? biblioteca.find((item) => item.id === atual.bibliotecaId) : undefined) ??
+    biblioteca.find((item) => normalizar(item.nome) === nomeAtual);
+  if (!referencia) return [];
+
+  const ocupados = new Set(jaNaDivisao.map(normalizar));
+  return biblioteca
+    .filter(
+      (item) =>
+        item.grupo === referencia.grupo &&
+        item.id !== referencia.id &&
+        normalizar(item.nome) !== nomeAtual &&
+        !ocupados.has(normalizar(item.nome)) &&
+        cabeNoContexto(item, prefs),
+    )
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+}
+
 /* ---------- prescrição de séries/reps/descanso ---------- */
 
 interface Prescricao {

@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { useStore, type SerieExecutadaInput } from "@/lib/store";
 import { resumoDaExecucao } from "@/lib/historico-exercicios";
 import { sugerirCarga, type SugestaoDeCarga } from "@/lib/progressao";
+import {
+  alternativasDoExercicio,
+  type LocalTreino,
+} from "@/lib/gerador-treino";
 import { parseDescansoSegundos } from "@/lib/descanso";
 import {
   detalhesDoBloco,
@@ -14,9 +18,11 @@ import type {
   CargaExecutada,
   Divisao,
   Exercicio,
+  ExercicioBiblioteca,
   EscalaTreino,
   FeedbackTreino,
   NivelDor,
+  Objetivo,
   ResultadoSerie,
   TipoSerieExecutada,
 } from "@/lib/types";
@@ -278,6 +284,7 @@ export function TreinoEmAndamento({
   hoje,
   aberturaInicial,
   semPersonal = false,
+  preferencias,
 }: {
   alunoId: string;
   treinoId: string;
@@ -288,11 +295,16 @@ export function TreinoEmAndamento({
   /** App do aluno sem personal vinculado: esconde pedido de troca e envio de vídeo,
    *  que dependem de alguém do outro lado para responder. */
   semPersonal?: boolean;
+  /** Preferências de quem treina sozinho — habilitam a troca direta de exercício
+   *  (sem personal não há a quem pedir; quem decide é o próprio aluno). */
+  preferencias?: { local: LocalTreino; objetivo: Objetivo };
 }) {
   const {
     sessoes,
     registrarTreinoRealizado,
     getExercicioBiblioteca,
+    biblioteca,
+    updateExercicio,
     ultimoHistoricoExercicio,
     solicitacoesDoAluno,
     addSolicitacaoSubstituicao,
@@ -339,6 +351,7 @@ export function TreinoEmAndamento({
   const [draftCarregado, setDraftCarregado] = useState(false);
   const [draftRestaurado, setDraftRestaurado] = useState(false);
   const [exercicioTroca, setExercicioTroca] = useState<Exercicio | null>(null);
+  const [exercicioTrocaLivre, setExercicioTrocaLivre] = useState<Exercicio | null>(null);
   const [exercicioVideo, setExercicioVideo] = useState<Exercicio | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [serieErroId, setSerieErroId] = useState<string | null>(null);
@@ -595,6 +608,26 @@ export function TreinoEmAndamento({
     await removerVideoLocal(videoId);
     removeVideoExecucao(videoId);
   };
+
+  /**
+   * Troca direta do exercício, sem pedir pra ninguém: é o caminho de quem
+   * treina sozinho e pegou o aparelho ocupado. Só antes de marcar série —
+   * depois disso o que já foi feito ficaria registrado com o nome errado.
+   */
+  const trocarExercicioLivre = (alvo: Exercicio, novo: ExercicioBiblioteca) => {
+    updateExercicio(treinoId, divisao.id, {
+      ...alvo,
+      nome: novo.nome,
+      bibliotecaId: novo.id,
+      carga: novo.equipamento === "Peso corporal" ? "corporal" : "a definir",
+    });
+    setExercicioTrocaLivre(null);
+  };
+
+  const podeTrocarLivre = (exercicioId: string) =>
+    semPersonal &&
+    preferencias !== undefined &&
+    !(seriesPorExercicio[exercicioId] ?? []).some((serie) => serie.concluida);
 
   /** Joga a carga sugerida nas séries que ainda não foram marcadas. */
   const aplicarCargaSugerida = (exercicioId: string, cargaKg: number) => {
@@ -964,6 +997,15 @@ export function TreinoEmAndamento({
                                   <PlayIcon className="h-3.5 w-3.5" /> Como fazer
                                 </a>
                               )}
+                              {podeTrocarLivre(exercicio.id) && (
+                                <button
+                                  type="button"
+                                  onClick={() => setExercicioTrocaLivre(exercicio)}
+                                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold text-muted hover:bg-surface-2 hover:text-accent"
+                                >
+                                  <SwapIcon className="h-3.5 w-3.5" /> Trocar
+                                </button>
+                              )}
                               {!semPersonal &&
                                 (solicitacaoPendente ? (
                                   <span className="rounded-full bg-orange-500/10 px-2 py-1 text-[10px] font-bold text-orange-300">
@@ -1143,6 +1185,25 @@ export function TreinoEmAndamento({
       )}
       </div>
       <Modal
+        open={exercicioTrocaLivre !== null}
+        onClose={() => setExercicioTrocaLivre(null)}
+        title="Trocar exercício"
+      >
+        {exercicioTrocaLivre && preferencias && (
+          <TrocaLivreLista
+            atual={exercicioTrocaLivre}
+            opcoes={alternativasDoExercicio(
+              biblioteca,
+              exercicioTrocaLivre,
+              preferencias,
+              divisao.exercicios.map((item) => item.nome),
+            )}
+            onEscolher={(novo) => trocarExercicioLivre(exercicioTrocaLivre, novo)}
+          />
+        )}
+      </Modal>
+
+      <Modal
         open={exercicioTroca !== null}
         onClose={() => setExercicioTroca(null)}
         title="Solicitar outro exercício"
@@ -1291,16 +1352,27 @@ export function TreinoEmAndamento({
                           }
                         />
                       )}
-                      {itemBiblioteca?.videoUrl && (
-                        <a
-                          href={itemBiblioteca.videoUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-accent"
-                        >
-                          <VideoIcon className="h-4 w-4" /> Ver demonstração
-                        </a>
-                      )}
+                      <div className="mt-3 flex flex-wrap items-center gap-4">
+                        {itemBiblioteca?.videoUrl && (
+                          <a
+                            href={itemBiblioteca.videoUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent"
+                          >
+                            <VideoIcon className="h-4 w-4" /> Ver demonstração
+                          </a>
+                        )}
+                        {podeTrocarLivre(exercicio.id) && (
+                          <button
+                            type="button"
+                            onClick={() => setExercicioTrocaLivre(exercicio)}
+                            className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-accent"
+                          >
+                            <SwapIcon className="h-4 w-4" /> Trocar exercício
+                          </button>
+                        )}
+                      </div>
 
                       <div className="mt-5 space-y-2">
                         {series.map((serie) => (
@@ -1423,6 +1495,53 @@ export function TreinoEmAndamento({
         </div>
       )}
     </>
+  );
+}
+
+/** Alternativas do mesmo grupo muscular, pra trocar na hora. */
+function TrocaLivreLista({
+  atual,
+  opcoes,
+  onEscolher,
+}: {
+  atual: Exercicio;
+  opcoes: ExercicioBiblioteca[];
+  onEscolher: (novo: ExercicioBiblioteca) => void;
+}) {
+  if (opcoes.length === 0) {
+    return (
+      <p className="text-sm text-muted">
+        Não achei outro exercício do mesmo grupo que caiba no seu treino — os que
+        existem já estão na divisão de hoje.
+      </p>
+    );
+  }
+  return (
+    <div>
+      <p className="text-sm text-muted">
+        No lugar de <strong className="text-text">{atual.nome}</strong>, mantendo{" "}
+        {atual.series} × {atual.repeticoes}:
+      </p>
+      <ul className="mt-4 divide-y divide-[var(--color-line)]">
+        {opcoes.map((opcao) => (
+          <li key={opcao.id}>
+            <button
+              type="button"
+              onClick={() => onEscolher(opcao)}
+              className="flex w-full items-center justify-between gap-3 py-3 text-left hover:text-accent"
+            >
+              <span className="min-w-0">
+                <span className="block font-semibold">{opcao.nome}</span>
+                {opcao.equipamento && (
+                  <span className="block text-xs text-muted">{opcao.equipamento}</span>
+                )}
+              </span>
+              <SwapIcon className="h-4 w-4 shrink-0 text-muted" />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
