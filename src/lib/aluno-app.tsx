@@ -10,7 +10,7 @@ import {
 } from "react";
 import { useStore } from "./store";
 import { gerarPlano, type PreferenciasTreino } from "./gerador-treino";
-import type { Aluno, Treino } from "./types";
+import type { Aluno, PersonalPublico, Treino } from "./types";
 
 /* ──────────────────────────────────────────────────────────────
    Conta do aluno que usa o app sozinho, sem personal.
@@ -58,8 +58,17 @@ interface AlunoAppContextValue {
   conta: ContaAluno | null;
   aluno: Aluno | undefined;
   situacao: SituacaoConta;
+  /** Personal que acompanha o aluno hoje. Sem vínculo, fica indefinido. */
+  personal: PersonalPublico | undefined;
+  /** Atalho: o treino é montado por um personal, não pelo gerador. */
+  vinculado: boolean;
+  /** Encerra o acompanhamento — o aluno volta a montar o próprio treino. */
+  desvincular: () => void;
   criarConta: (dados: NovaContaAluno) => ContaAluno;
-  /** Regera a planilha com as mesmas preferências, variando os exercícios. */
+  /**
+   * Regera a planilha com as mesmas preferências, variando os exercícios.
+   * Não faz nada com personal vinculado — quem manda no treino é ele.
+   */
   gerarOutroTreino: () => void;
   /** Salva novas preferências e monta um treino novo em cima delas. */
   atualizarPreferencias: (preferencias: PreferenciasTreino) => void;
@@ -83,8 +92,16 @@ function lerConta(): ContaAluno | null {
 }
 
 export function AlunoAppProvider({ children }: { children: ReactNode }) {
-  const { addAluno, updateAluno, removeAluno, getAluno, addTreino, updateTreino, biblioteca } =
-    useStore();
+  const {
+    addAluno,
+    updateAluno,
+    removeAluno,
+    getAluno,
+    addTreino,
+    updateTreino,
+    biblioteca,
+    perfilPublicoPorEmail,
+  } = useStore();
   const [conta, setConta] = useState<ContaAluno | null>(null);
   const [carregando, setCarregando] = useState(true);
 
@@ -96,6 +113,11 @@ export function AlunoAppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const aluno = conta ? getAluno(conta.alunoId) : undefined;
+  // O vínculo mora no próprio cadastro: o personal o assume ao converter o lead.
+  const personal = aluno?.personalEmail
+    ? perfilPublicoPorEmail(aluno.personalEmail)
+    : undefined;
+  const vinculado = Boolean(aluno?.personalEmail);
 
   const situacao: SituacaoConta = carregando
     ? "carregando"
@@ -133,6 +155,12 @@ export function AlunoAppProvider({ children }: { children: ReactNode }) {
       conta,
       aluno,
       situacao,
+      personal,
+      vinculado,
+      desvincular: () => {
+        if (!conta || !aluno) return;
+        updateAluno(conta.alunoId, { personalEmail: undefined });
+      },
       criarConta: (dados) => {
         const perfil = montarPerfil(dados);
         montarTreino(perfil.id, dados.preferencias, 0);
@@ -147,7 +175,7 @@ export function AlunoAppProvider({ children }: { children: ReactNode }) {
         return nova;
       },
       gerarOutroTreino: () => {
-        if (!conta || !aluno) return;
+        if (!conta || !aluno || vinculado) return;
         const variacao = conta.variacao + 1;
         montarTreino(conta.alunoId, conta.preferencias, variacao);
         persistir({ ...conta, variacao });
@@ -158,6 +186,12 @@ export function AlunoAppProvider({ children }: { children: ReactNode }) {
           objetivo: preferencias.objetivo,
           modalidade: preferencias.local === "casa" ? "Treino em casa" : "Musculação",
         });
+        // Com personal, a mudança de preferência é recado pra ele — a planilha
+        // dele não pode ser sobrescrita por um treino gerado.
+        if (vinculado) {
+          persistir({ ...conta, preferencias });
+          return;
+        }
         const variacao = conta.variacao + 1;
         montarTreino(conta.alunoId, preferencias, variacao);
         persistir({ ...conta, preferencias, variacao });
@@ -181,7 +215,19 @@ export function AlunoAppProvider({ children }: { children: ReactNode }) {
         persistir({ ...conta, pedidos: [pedido, ...anteriores] });
       },
     };
-  }, [conta, aluno, situacao, biblioteca, addAluno, updateAluno, removeAluno, addTreino, updateTreino]);
+  }, [
+    conta,
+    aluno,
+    situacao,
+    personal,
+    vinculado,
+    biblioteca,
+    addAluno,
+    updateAluno,
+    removeAluno,
+    addTreino,
+    updateTreino,
+  ]);
 
   return <AlunoAppContext.Provider value={value}>{children}</AlunoAppContext.Provider>;
 }

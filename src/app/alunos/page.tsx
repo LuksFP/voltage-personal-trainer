@@ -138,6 +138,7 @@ export default function AlunosPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <p className="truncate font-semibold">{a.nome}</p>
+                      {a.contaApp && <Badge tone="app">App</Badge>}
                       {a.modalidade && <Badge tone="volt">{a.modalidade}</Badge>}
                       {!a.ativo && <Badge tone="off">Inativo</Badge>}
                     </div>

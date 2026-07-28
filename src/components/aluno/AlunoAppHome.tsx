@@ -63,7 +63,7 @@ function calcularSequencia(datas: Set<string>, hoje: string): number {
 }
 
 export function AlunoAppHome() {
-  const { conta, aluno } = useAlunoApp();
+  const { conta, aluno, personal, vinculado } = useAlunoApp();
   const { treinosDoAluno, sessoes } = useStore();
   const [aba, setAba] = useState<Aba>("hoje");
   const hoje = isoLocal(new Date());
@@ -144,6 +144,18 @@ export function AlunoAppHome() {
               <h1 className="font-display mt-1 text-4xl font-bold leading-none">
                 {primeiroNome}
               </h1>
+              {vinculado && (
+                <button
+                  type="button"
+                  onClick={() => setAba("personais")}
+                  className="mt-2 text-sm text-muted transition-colors hover:text-text"
+                >
+                  Acompanhado por{" "}
+                  <span className="font-semibold text-volt">
+                    {personal?.nome ?? "seu personal"}
+                  </span>
+                </button>
+              )}
             </div>
 
             {/* Bloco do dia — assimétrico de propósito, sem virar mais um card igual */}
@@ -236,7 +248,9 @@ export function AlunoAppHome() {
                 {treinoAtivo?.nome ?? "Treino"}
               </h1>
               <p className="mt-1 text-sm text-muted">
-                Marque cada série conforme for fazendo. O descanso dispara sozinho.
+                {vinculado
+                  ? `Montado por ${personal?.nome ?? "seu personal"}. Ele vê o que você marca aqui — inclusive os pedidos de troca.`
+                  : "Marque cada série conforme for fazendo. O descanso dispara sozinho."}
               </p>
             </div>
 
@@ -260,7 +274,7 @@ export function AlunoAppHome() {
                       divisao={divisao}
                       hoje={hoje}
                       aberturaInicial={divisao.id === divisaoDeHoje?.id && !concluidoHoje}
-                      semPersonal
+                      semPersonal={!vinculado}
                     />
                   ))}
               </div>

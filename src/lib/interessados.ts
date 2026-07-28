@@ -106,6 +106,7 @@ export type CriarInteressadoInput = Pick<
   | "origem"
   | "origemDetalhe"
   | "personalPublicoId"
+  | "contaAppAlunoId"
   | "proximoFollowUp"
   | "observacoes"
 >;
@@ -139,6 +140,8 @@ export type ConverterInteressadoDominioInput = Partial<CriarAlunoConversaoInput>
 export interface ResultadoConversaoInteressado {
   aluno: Aluno;
   interessado: Interessado;
+  /** true quando o cadastro veio do app e foi assumido (não é um aluno novo). */
+  adotado: boolean;
 }
 
 export type SituacaoFollowUp =
@@ -318,6 +321,7 @@ export function normalizarCriarInteressadoInput(
     : undefined;
   const observacoes = textoOpcional(input.observacoes, "as observações", 2_000);
   const personalPublicoId = textoOpcional(input.personalPublicoId, "o perfil do catálogo", 160);
+  const contaAppAlunoId = textoOpcional(input.contaAppAlunoId, "a conta do app", 160);
   validarOrigemDetalhe(input.origem, origemDetalhe);
 
   return {
@@ -328,6 +332,7 @@ export function normalizarCriarInteressadoInput(
     origem: input.origem,
     ...(origemDetalhe ? { origemDetalhe } : {}),
     ...(personalPublicoId ? { personalPublicoId } : {}),
+    ...(contaAppAlunoId ? { contaAppAlunoId } : {}),
     ...(proximoFollowUp ? { proximoFollowUp } : {}),
     ...(observacoes ? { observacoes } : {}),
   };
@@ -607,13 +612,24 @@ function textoOpcionalAluno(value: string | undefined): string | undefined {
 function normalizarAlunoDaConversao(
   interessado: Interessado,
   input: ConverterInteressadoDominioInput,
+  /** Cadastro já existente (aluno que veio do app) — vale mais que o lead. */
+  adotado?: Aluno,
 ): CriarAlunoConversaoInput {
+  const doApp: ConverterInteressadoDominioInput = adotado
+    ? {
+        ...(adotado.telefone ? { telefone: adotado.telefone } : {}),
+        ...(adotado.email ? { email: adotado.email } : {}),
+        ...(adotado.objetivo ? { objetivo: adotado.objetivo } : {}),
+        ...(adotado.modalidade ? { modalidade: adotado.modalidade } : {}),
+      }
+    : {};
   const mesclado: ConverterInteressadoDominioInput = {
     nome: interessado.nome,
     telefone: interessado.telefone,
     email: interessado.email,
     objetivo: interessado.objetivo,
     observacoes: interessado.observacoes,
+    ...doApp,
     ...input,
   };
   const nome = mesclado.nome?.trim().replace(/\s+/g, " ");
@@ -671,15 +687,18 @@ function normalizarAlunoDaConversao(
 function validarContatoAlunoDuplicado(
   alunos: readonly Aluno[],
   dados: Pick<CriarAlunoConversaoInput, "telefone" | "email">,
+  /** Id do próprio cadastro adotado — não conta como duplicata dele mesmo. */
+  ignorarId?: string,
 ): void {
+  const candidatos = ignorarId ? alunos.filter((aluno) => aluno.id !== ignorarId) : alunos;
   const telefone = chaveTelefoneInteressado(dados.telefone);
   const email = chaveEmailInteressado(dados.email);
   const telefoneDuplicado =
     telefone !== undefined &&
-    alunos.some((aluno) => chaveTelefoneInteressado(aluno.telefone) === telefone);
+    candidatos.some((aluno) => chaveTelefoneInteressado(aluno.telefone) === telefone);
   const emailDuplicado =
     email !== undefined &&
-    alunos.some((aluno) => chaveEmailInteressado(aluno.email) === email);
+    candidatos.some((aluno) => chaveEmailInteressado(aluno.email) === email);
   if (telefoneDuplicado && emailDuplicado) {
     throw new Error("Já existe um aluno com este telefone e e-mail.");
   }
@@ -690,26 +709,37 @@ function validarContatoAlunoDuplicado(
 /**
  * Conversão pura e atômica do ponto de vista do domínio. O store aplica os dois
  * objetos retornados no mesmo `setData`, sem etapa intermediária observável.
+ *
+ * Quando o lead veio do app (`contaAppAlunoId`) e o cadastro ainda existe, ele é
+ * **adotado**: mesmo id, mesmo histórico de treino/sessões, agora com o vínculo
+ * ao personal. Sem isso a conversão criaria um segundo cadastro do mesmo aluno.
  */
 export function converterInteressadoParaAluno(
   interessado: Interessado,
   input: ConverterInteressadoDominioInput,
   alunos: readonly Aluno[],
-  dados: { alunoId: string; agora: string },
+  dados: { alunoId: string; agora: string; personalEmail?: string },
 ): ResultadoConversaoInteressado {
   assegurarInteressadoAtivo(interessado, "converter");
   validarDataHoraInteressado(dados.agora, "A conversão");
   const alunoId = textoObrigatorio(dados.alunoId, "o identificador do aluno", 160);
-  if (alunos.some((aluno) => aluno.id === alunoId)) {
+  const adotado = interessado.contaAppAlunoId
+    ? alunos.find((item) => item.id === interessado.contaAppAlunoId)
+    : undefined;
+  if (!adotado && alunos.some((aluno) => aluno.id === alunoId)) {
     throw new Error("Já existe um aluno com o identificador gerado.");
   }
-  const normalizado = normalizarAlunoDaConversao(interessado, input);
-  validarContatoAlunoDuplicado(alunos, normalizado);
+  const normalizado = normalizarAlunoDaConversao(interessado, input, adotado);
+  validarContatoAlunoDuplicado(alunos, normalizado, adotado?.id);
+  const personalEmail =
+    normalizarEmailInteressado(dados.personalEmail) ?? adotado?.personalEmail;
   const aluno: Aluno = {
+    ...(adotado ?? {}),
     ...normalizado,
-    id: alunoId,
-    criadoEm: dados.agora,
+    id: adotado?.id ?? alunoId,
+    criadoEm: adotado?.criadoEm ?? dados.agora,
     ativo: normalizado.ativo ?? true,
+    ...(personalEmail ? { personalEmail } : {}),
   };
   const convertido: Interessado = {
     ...interessado,
@@ -725,7 +755,7 @@ export function converterInteressadoParaAluno(
     convertidoEm: dados.agora,
     atualizadoEm: dados.agora,
   };
-  return { aluno, interessado: convertido };
+  return { aluno, interessado: convertido, adotado: adotado !== undefined };
 }
 
 function dataLocal(reference: Date): string {
@@ -909,6 +939,7 @@ export function isInteressado(value: unknown): value is Interessado {
     !isOptionalNonBlankString(value.origemDetalhe, 160) ||
     (value.origem === "outro" && !isNonBlankString(value.origemDetalhe, 160)) ||
     !isOptionalNonBlankString(value.personalPublicoId, 160) ||
+    !isOptionalNonBlankString(value.contaAppAlunoId, 160) ||
     !ehStatusInteressado(value.status) ||
     (value.proximoFollowUp !== undefined && !isDataLocal(value.proximoFollowUp)) ||
     !Array.isArray(value.historicoContatos) ||

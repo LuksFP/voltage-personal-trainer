@@ -20,9 +20,14 @@ export interface Aluno {
   observacoes?: string;
   ativo: boolean;
   criadoEm: string;
-  // Aluno que criou a própria conta pelo app (/app), sem personal vinculado.
-  // Não entra nas listas, relatórios, cobranças nem lembretes do personal.
+  // Aluno que criou a própria conta pelo app (/app).
+  // Enquanto não tiver personalEmail, não entra nas listas, relatórios,
+  // cobranças nem lembretes do personal — é um aluno solo.
   contaApp?: boolean;
+  // E-mail do personal que acompanha este aluno (chave da conta no auth mockado).
+  // Preenchido quando um lead vira aluno; num aluno de app é o que fecha o
+  // vínculo e faz o cadastro aparecer na carteira do personal.
+  personalEmail?: string;
 }
 
 export type OrigemInteressado =
@@ -81,6 +86,9 @@ export interface Interessado {
   origemDetalhe?: string;
   // Preenchido quando o lead veio do catálogo: qual perfil público ele abriu.
   personalPublicoId?: string;
+  // Perfil de app que enviou o pedido. Na conversão o personal adota este
+  // cadastro (com todo o histórico de treino) em vez de criar um novo.
+  contaAppAlunoId?: string;
   status: StatusInteressado;
   proximoFollowUp?: string; // YYYY-MM-DD local
   historicoContatos: RegistroContatoInteressado[];

@@ -138,7 +138,7 @@ function CartaoPersonal({
 
 export function CatalogoPersonais() {
   const { perfisPublicos } = useStore();
-  const { conta, pedidos } = useAlunoApp();
+  const { conta, pedidos, personal } = useAlunoApp();
   const [aberto, setAberto] = useState<PersonalPublico | null>(null);
   const [filtro, setFiltro] = useState<FiltroCatalogo>(() => ({
     especialidade: conta?.preferencias.objetivo,
@@ -166,14 +166,32 @@ export function CatalogoPersonais() {
 
   return (
     <section>
+      {personal && (
+        <div className="mb-7 flex items-center gap-3.5 border-l-2 border-volt pl-4">
+          <Avatar nome={personal.nome} />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold uppercase tracking-widest text-volt">Seu personal</p>
+            <p className="font-display truncate text-lg font-semibold">{personal.nome}</p>
+            <button
+              type="button"
+              onClick={() => setAberto(personal)}
+              className="mt-0.5 text-sm font-semibold text-accent hover:underline"
+            >
+              Ver perfil
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="mb-5">
         <p className="text-xs font-bold uppercase tracking-widest text-accent">Catálogo</p>
         <h1 className="font-display mt-1 text-3xl font-bold leading-tight">
-          Quer ajuda de um personal?
+          {personal ? "Outros personais" : "Quer ajuda de um personal?"}
         </h1>
         <p className="mt-2 text-sm text-muted">
-          Treinar sozinho funciona. Mas se você travou, quer corrigir execução ou tem alguma
-          limitação, alguém olhando muda o jogo.
+          {personal
+            ? "Dá pra conversar com quem você quiser. Seu acompanhamento atual só muda quando você decidir."
+            : "Treinar sozinho funciona. Mas se você travou, quer corrigir execução ou tem alguma limitação, alguém olhando muda o jogo."}
         </p>
       </div>
 

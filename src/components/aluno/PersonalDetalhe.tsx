@@ -32,8 +32,10 @@ export function PersonalDetalhe({
   aoVoltar: () => void;
 }) {
   const { addInteressado } = useStore();
-  const { conta, pedidos, registrarPedido } = useAlunoApp();
+  const { conta, pedidos, registrarPedido, personal, vinculado } = useAlunoApp();
   const pedidoExistente = pedidos.find((item) => item.personalPublicoId === perfil.id);
+  const eMeuPersonal = personal?.id === perfil.id;
+  const vinculadoAOutro = vinculado && !eMeuPersonal;
 
   const [telefone, setTelefone] = useState("");
   const [mensagem, setMensagem] = useState("");
@@ -43,15 +45,21 @@ export function PersonalDetalhe({
   const enviar = () => {
     if (!conta) return;
     setErro(null);
+    if (!telefone.trim()) {
+      setErro("Informe um telefone — é por onde ele vai te responder.");
+      return;
+    }
     setEnviando(true);
     try {
       const interessado = addInteressado({
         nome: conta.nome,
-        telefone: telefone.trim() || undefined,
+        telefone: telefone.trim(),
         objetivo: conta.preferencias.objetivo,
         origem: "catalogo",
         origemDetalhe: `Catálogo do app — ${perfil.nome}`,
         personalPublicoId: perfil.id,
+        // Faz o personal assumir este cadastro em vez de criar outro.
+        contaAppAlunoId: conta.alunoId,
         observacoes:
           [
             `Veio pelo app: treina ${conta.preferencias.dias}x por semana`,
@@ -151,7 +159,17 @@ export function PersonalDetalhe({
 
       {/* ── contato ─────────────────────────────────────────── */}
       <div className="mt-8 border-t border-line pt-6">
-        {pedidoExistente ? (
+        {eMeuPersonal ? (
+          <div className="rounded-xl2 border border-volt/40 bg-volt/8 p-4">
+            <p className="inline-flex items-center gap-2 font-semibold text-volt">
+              <CheckIcon className="h-5 w-5" /> É com {perfil.nome.split(" ")[0]} que você treina
+            </p>
+            <p className="mt-1 text-sm text-muted">
+              Ele monta a sua planilha e acompanha o que você marca no app. Para encerrar, vá em
+              Perfil.
+            </p>
+          </div>
+        ) : pedidoExistente ? (
           <div className="rounded-xl2 border border-accent/30 bg-accent/8 p-4">
             <p className="inline-flex items-center gap-2 font-semibold text-accent">
               <CheckIcon className="h-5 w-5" /> Pedido enviado
@@ -168,13 +186,22 @@ export function PersonalDetalhe({
             <p className="mt-1 text-sm text-muted">
               Seu objetivo e sua rotina de treino vão junto — não precisa repetir tudo.
             </p>
+            {vinculadoAOutro && (
+              <p className="mt-4 rounded-xl2 border border-line bg-surface-2/50 px-4 py-3 text-sm text-muted">
+                Hoje quem te acompanha é{" "}
+                <strong className="text-text">{personal?.nome ?? "seu personal"}</strong>. Você
+                pode conversar com outro sem problema — o acompanhamento atual só termina quando
+                você encerrar no Perfil.
+              </p>
+            )}
             <div className="mt-4 space-y-4">
-              <Field label="Seu telefone" hint="Opcional, mas acelera o retorno">
+              <Field label="Seu telefone" hint="É por aqui que ele responde">
                 <Input
                   value={telefone}
                   onChange={(e) => setTelefone(e.target.value)}
                   placeholder="(13) 90000-0000"
                   inputMode="tel"
+                  required
                 />
               </Field>
               <Field label="Quer falar alguma coisa?" hint="Opcional">
@@ -194,7 +221,8 @@ export function PersonalDetalhe({
                 {enviando ? "Enviando…" : `Chamar ${perfil.nome.split(" ")[0]}`}
               </Button>
               <p className="text-center text-xs text-muted">
-                Ele vê seu nome, telefone e objetivo. Seu histórico de treino continua só seu.
+                Agora ele vê só nome, telefone e objetivo. Se vocês fecharem, ele passa a montar
+                seu treino e a acompanhar seus registros.
               </p>
             </div>
           </>

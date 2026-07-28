@@ -24,6 +24,7 @@ import { Modal } from "@/components/Modal";
 import { Badge, Button, Card, Input, Select, Textarea, cx } from "@/components/ui";
 import { linkWhatsapp } from "@/lib/compartilhar";
 import { useStore } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
 import type {
   Interessado,
   OrigemInteressado,
@@ -160,6 +161,7 @@ export default function InteressadosPage() {
     removeInteressado,
     getAluno,
   } = useStore();
+  const { personal } = useAuth();
   const hoje = hojeLocal();
   const [visao, setVisao] = useState<Visao>("pipeline");
   const [colunaMobile, setColunaMobile] = useState<ColunaPipeline>("novos");
@@ -285,6 +287,8 @@ export default function InteressadosPage() {
     if (!conversaoId) return;
     executar(() => {
       const aluno = converterInteressado(conversaoId, {
+        // Fecha o vínculo: é o que faz a conta de app entrar na carteira.
+        personalEmail: personal?.email,
         nome: values.nome,
         telefone: values.telefone || undefined,
         email: values.email || undefined,
@@ -478,6 +482,13 @@ export default function InteressadosPage() {
         onClose={fecharAcoes}
         title="Converter em aluno"
       >
+        {conversaoInteressado?.contaAppAlunoId && (
+          <p className="mb-4 rounded-xl2 border border-volt/40 bg-volt/8 px-4 py-3 text-sm">
+            <strong className="font-semibold">Esse lead já treina pelo app.</strong> Ao converter,
+            você assume o cadastro que já existe — com o histórico de treinos e séries dele — em vez
+            de criar outro. A partir daí a planilha que você montar aparece no app dele.
+          </p>
+        )}
         {conversaoInteressado && (
           <AlunoForm
             initial={{

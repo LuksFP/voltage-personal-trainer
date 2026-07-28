@@ -525,6 +525,14 @@ function uid(prefix: string): string {
   return `${prefix}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+/**
+ * Quem entra nas listas, relatórios, cobranças e lembretes do personal.
+ * Conta criada no app (`contaApp`) só entra depois de vinculada a um personal.
+ */
+function naCarteiraDoPersonal(aluno: Aluno): boolean {
+  return !aluno.contaApp || Boolean(aluno.personalEmail);
+}
+
 function interessadoObrigatorio(
   interessados: readonly Interessado[],
   id: string,
@@ -1051,9 +1059,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     return {
       schemaVersion: data.schemaVersion,
-      // Alunos com conta própria no app não pertencem à carteira do personal.
       // getAluno() continua enxergando todos — o app/portal depende disso.
-      alunos: data.alunos.filter((aluno) => !aluno.contaApp),
+      alunos: data.alunos.filter(naCarteiraDoPersonal),
       interessados: data.interessados,
       anamneses: data.anamneses,
       metasAluno: data.metasAluno,
@@ -1303,12 +1310,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const atual = interessadoObrigatorio(data.interessados, id);
         const agora = new Date().toISOString();
         const alunoId = uid("aluno");
-        const conversao = converterInteressadoParaAluno(
-          atual,
-          input,
-          data.alunos,
-          { alunoId, agora },
-        );
+        const dados = { alunoId, agora, personalEmail: input.personalEmail };
+        const conversao = converterInteressadoParaAluno(atual, input, data.alunos, dados);
 
         setData((d) => {
           const interessadoAtual = interessadoObrigatorio(d.interessados, id);
@@ -1316,11 +1319,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             interessadoAtual,
             input,
             d.alunos,
-            { alunoId, agora },
+            dados,
           );
           return {
             ...d,
-            alunos: [atualizada.aluno, ...d.alunos],
+            // Lead vindo do app não vira cadastro novo: o existente é assumido.
+            alunos: atualizada.adotado
+              ? d.alunos.map((aluno) =>
+                  aluno.id === atualizada.aluno.id ? atualizada.aluno : aluno,
+                )
+              : [atualizada.aluno, ...d.alunos],
             interessados: d.interessados.map((item) =>
               item.id === id ? atualizada.interessado : item,
             ),
@@ -2571,7 +2579,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       sincronizarLembretesWhatsApp: (hoje) => {
         const candidatos = gerarCandidatosLembrete(
           {
-            alunos: data.alunos.filter((aluno) => !aluno.contaApp),
+            alunos: data.alunos.filter(naCarteiraDoPersonal),
             sessoes: data.sessoes,
             avaliacoes: data.avaliacoes,
             pagamentos: data.pagamentos,

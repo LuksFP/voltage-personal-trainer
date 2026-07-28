@@ -241,7 +241,7 @@ export function PerfilPublicoCard() {
           />
         </Field>
 
-        <Field label="Especialidades" hint="Marque no que você é forte">
+        <Field label="Especialidades" hint="Marque no que você é forte" grupo>
           <div className="flex flex-wrap gap-1.5 pt-1">
             {ESPECIALIDADES.map((objetivo) => {
               const ativa = especialidades.includes(objetivo);

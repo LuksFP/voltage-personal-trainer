@@ -23,11 +23,20 @@ const OBJETIVOS: Objetivo[] = [
 ];
 
 export function PerfilAlunoApp() {
-  const { conta, gerarOutroTreino, atualizarPreferencias, apagarConta } = useAlunoApp();
+  const {
+    conta,
+    personal,
+    vinculado,
+    desvincular,
+    gerarOutroTreino,
+    atualizarPreferencias,
+    apagarConta,
+  } = useAlunoApp();
   const [rascunho, setRascunho] = useState<PreferenciasTreino | null>(
     conta ? conta.preferencias : null,
   );
   const [confirmandoApagar, setConfirmandoApagar] = useState(false);
+  const [confirmandoSaida, setConfirmandoSaida] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
 
   if (!conta || !rascunho) return null;
@@ -47,6 +56,51 @@ export function PerfilAlunoApp() {
           Treinando desde {new Date(conta.criadaEm).toLocaleDateString("pt-BR")}
         </p>
       </div>
+
+      {vinculado && (
+        <section className="border-l-2 border-volt pl-4">
+          <p className="text-xs font-bold uppercase tracking-widest text-volt">Acompanhamento</p>
+          <p className="font-display mt-1 text-xl font-semibold">
+            {personal?.nome ?? "Seu personal"}
+          </p>
+          <p className="mt-1 text-sm text-muted">
+            Quem monta seu treino agora é ele. Precisa trocar um exercício? Peça direto na tela do
+            treino que o pedido chega pra ele.
+          </p>
+          {confirmandoSaida ? (
+            <div className="mt-4 rounded-xl2 border border-danger/30 bg-danger/8 p-4">
+              <p className="font-semibold">Encerrar o acompanhamento?</p>
+              <p className="mt-1 text-sm text-muted">
+                Você volta a montar os próprios treinos. O que você já treinou continua no seu
+                histórico.
+              </p>
+              <div className="mt-4 flex gap-2">
+                <Button
+                  variant="danger"
+                  onClick={() => {
+                    desvincular();
+                    setConfirmandoSaida(false);
+                    setAviso("Acompanhamento encerrado. Gere um treino quando quiser.");
+                  }}
+                >
+                  Encerrar
+                </Button>
+                <Button variant="ghost" onClick={() => setConfirmandoSaida(false)}>
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirmandoSaida(true)}
+              className="mt-3 text-sm font-semibold text-muted hover:text-danger"
+            >
+              Encerrar acompanhamento
+            </button>
+          )}
+        </section>
+      )}
 
       <section className="space-y-4">
         <h2 className="font-display text-lg font-semibold">Seu plano</h2>
@@ -110,24 +164,32 @@ export function PerfilAlunoApp() {
             disabled={!mudou}
             onClick={() => {
               atualizarPreferencias(rascunho);
-              setAviso("Plano atualizado — treino novo montado.");
+              setAviso(
+                vinculado
+                  ? "Plano atualizado. Seu personal vê a mudança no seu cadastro."
+                  : "Plano atualizado — treino novo montado.",
+              );
             }}
           >
-            Salvar e montar treino novo
+            {vinculado ? "Salvar plano" : "Salvar e montar treino novo"}
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              gerarOutroTreino();
-              setAviso("Treino novo gerado com os mesmos objetivos.");
-            }}
-          >
-            <SwapIcon className="h-4 w-4" /> Gerar outro treino
-          </Button>
+          {!vinculado && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                gerarOutroTreino();
+                setAviso("Treino novo gerado com os mesmos objetivos.");
+              }}
+            >
+              <SwapIcon className="h-4 w-4" /> Gerar outro treino
+            </Button>
+          )}
         </div>
         {aviso && <p className="text-sm font-semibold text-accent">{aviso}</p>}
         <p className="text-sm text-muted">
-          O treino anterior continua no histórico — trocar de plano não apaga o que você já fez.
+          {vinculado
+            ? "Com personal, a planilha é montada por ele — esses dados servem pra ele te conhecer."
+            : "O treino anterior continua no histórico — trocar de plano não apaga o que você já fez."}
         </p>
       </section>
 

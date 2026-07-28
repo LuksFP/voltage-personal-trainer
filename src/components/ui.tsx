@@ -36,12 +36,40 @@ export function Button({
 }
 
 /* ---------- Field wrappers ---------- */
-export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
+/**
+ * `grupo` troca o <label> por um grupo rotulado. Use quando o conteúdo não é um
+ * único controle (várias pílulas, checkboxes): dentro de um <label>, o texto
+ * inteiro vira o nome acessível do primeiro botão do grupo.
+ */
+export function Field({
+  label,
+  children,
+  hint,
+  grupo = false,
+}: {
+  label: string;
+  children: ReactNode;
+  hint?: string;
+  grupo?: boolean;
+}) {
+  const rotulo = <span className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</span>;
+  const dica = hint ? <span className="text-xs text-muted/70">{hint}</span> : null;
+
+  if (grupo) {
+    return (
+      <fieldset className="flex flex-col gap-1.5">
+        <legend className="mb-1.5">{rotulo}</legend>
+        {children}
+        {dica}
+      </fieldset>
+    );
+  }
+
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</span>
+      {rotulo}
       {children}
-      {hint && <span className="text-xs text-muted/70">{hint}</span>}
+      {dica}
     </label>
   );
 }
@@ -62,11 +90,18 @@ export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
 }
 
 /* ---------- Badge ---------- */
-export function Badge({ children, tone = "neutral" }: { children: ReactNode; tone?: "neutral" | "volt" | "off" }) {
+export function Badge({
+  children,
+  tone = "neutral",
+}: {
+  children: ReactNode;
+  tone?: "neutral" | "volt" | "off" | "app";
+}) {
   const tones = {
     neutral: "bg-surface-2 text-muted",
     volt: "bg-accent/15 text-accent",
     off: "bg-danger/10 text-danger",
+    app: "bg-volt/15 text-volt",
   };
   return (
     <span className={cx("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold", tones[tone])}>

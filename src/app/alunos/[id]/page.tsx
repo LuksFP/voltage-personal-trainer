@@ -96,6 +96,7 @@ export default function AlunoPage() {
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="font-display text-3xl font-bold sm:text-4xl">{aluno.nome}</h1>
               {aluno.ativo ? <Badge tone="volt">Ativo</Badge> : <Badge tone="off">Inativo</Badge>}
+              {aluno.contaApp && <Badge tone="app">Usa o app</Badge>}
               {aluno.modalidade && <Badge tone="neutral">{aluno.modalidade}</Badge>}
             </div>
             <p className="mt-1 text-sm text-muted">
@@ -196,6 +197,27 @@ function PortalAcesso({ aluno }: { aluno: Aluno }) {
     const texto = `Oi ${primeiro}! Este é o seu acesso ao Voltage para ver seu treino e sua agenda pelo celular: ${link}`;
     window.open(linkWhatsapp(texto, aluno.telefone), "_blank", "noopener,noreferrer");
   };
+
+  // Quem veio do app já tem o treino no celular: o link do portal só confunde.
+  if (aluno.contaApp) {
+    return (
+      <Card className="p-5">
+        <div className="flex items-start gap-3">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-volt/15 text-volt">
+            <PhoneIcon className="h-5 w-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-display font-semibold">Já treina pelo app</h2>
+            <p className="mt-0.5 text-sm text-muted">
+              {aluno.nome.split(" ")[0]} usa o Voltage no celular. A planilha que você montar aqui
+              aparece lá como treino do dia, e o que ele marcar volta pra sua agenda e seus
+              relatórios.
+            </p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-5">
