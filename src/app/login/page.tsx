@@ -18,7 +18,7 @@ export default function LoginPage() {
     e.preventDefault();
     setErro(null);
     const r = entrar(email, senha);
-    if (r.ok) router.replace("/");
+    if (r.ok) router.replace("/painel");
     else setErro(r.erro ?? "Não foi possível entrar.");
   };
 
@@ -64,7 +64,7 @@ export default function LoginPage() {
         className="mt-4 w-full"
         onClick={() => {
           entrarDemo();
-          router.replace("/");
+          router.replace("/painel");
         }}
       >
         Entrar como demonstração

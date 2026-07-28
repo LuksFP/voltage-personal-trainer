@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { ultimoBackup } from "@/lib/backup";
 import { calcularAlertasPersonal, type AlertaPersonal } from "@/lib/alertas";
-import { Badge, Card, cx } from "@/components/ui";
+import { Avatar, Badge, Card, cx } from "@/components/ui";
 import {
   CalendarIcon,
   ChartIcon,
@@ -419,16 +419,3 @@ function Stat({
   );
 }
 
-export function Avatar({ nome }: { nome: string }) {
-  const initials = nome
-    .split(" ")
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join("")
-    .toUpperCase();
-  return (
-    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent/15 font-display text-sm font-bold text-accent">
-      {initials}
-    </div>
-  );
-}

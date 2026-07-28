@@ -117,4 +117,21 @@ export function Card({ children, className }: { children: ReactNode; className?:
   );
 }
 
+/* ---------- Avatar ---------- */
+/** Iniciais do aluno/personal no painel. O app do aluno tem o seu próprio,
+ *  maior e quadrado — este é o redondo das listas. */
+export function Avatar({ nome }: { nome: string }) {
+  const initials = nome
+    .split(" ")
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase();
+  return (
+    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent/15 font-display text-sm font-bold text-accent">
+      {initials}
+    </div>
+  );
+}
+
 export { cx };

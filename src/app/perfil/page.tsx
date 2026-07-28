@@ -3,10 +3,9 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useStore } from "@/lib/store";
-import { Button, Card, Field, Input, Textarea } from "@/components/ui";
+import { Avatar, Button, Card, Field, Input, Textarea } from "@/components/ui";
 import { BackupCard } from "@/components/BackupCard";
 import { PerfilPublicoCard } from "@/components/PerfilPublicoCard";
-import { Avatar } from "../page";
 
 export default function PerfilPage() {
   const { personal, atualizarPerfil, sair } = useAuth();

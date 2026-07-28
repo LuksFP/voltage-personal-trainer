@@ -8,8 +8,7 @@ import { formatBRL } from "@/lib/pagamentos";
 import { BarChart } from "@/components/BarChart";
 import { LineChart } from "@/components/LineChart";
 import { ResumoRelatoriosSemanais } from "@/components/ResumoRelatoriosSemanais";
-import { Badge, Card, cx } from "@/components/ui";
-import { Avatar } from "@/app/page";
+import { Avatar, Badge, Card, cx } from "@/components/ui";
 import {
   CalendarIcon,
   ChartIcon,

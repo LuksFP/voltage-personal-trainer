@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
-import { Avatar } from "../page";
-import { Badge, Button, Card, Input, Select } from "@/components/ui";
+import { Avatar, Badge, Button, Card, Input, Select } from "@/components/ui";
 import { Modal } from "@/components/Modal";
 import { AlunoForm, type AlunoFormValues } from "@/components/AlunoForm";
 import { ChevronRightIcon, PlusIcon, UsersIcon } from "@/components/icons";

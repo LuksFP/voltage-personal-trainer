@@ -21,7 +21,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { cx } from "./ui";
 
 const nav = [
-  { href: "/", label: "Painel", icon: GridIcon },
+  { href: "/painel", label: "Painel", icon: GridIcon },
   { href: "/alunos", label: "Alunos", icon: UsersIcon },
   { href: "/interessados", label: "Interessados", icon: UserPlusIcon },
   { href: "/biblioteca", label: "Biblioteca", icon: BookIcon },
@@ -35,7 +35,7 @@ const nav = [
 
 function NavLinks({ pathname, onNavigate }: { pathname: string | null; onNavigate: () => void }) {
   const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : (pathname ?? "").startsWith(href);
+    (pathname ?? "").startsWith(href);
 
   return (
     <nav className="flex flex-col gap-1">
@@ -107,7 +107,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
 function Brand() {
   return (
-    <Link href="/" className="flex items-center gap-2.5">
+    <Link href="/painel" className="flex items-center gap-2.5">
       <span className="grid h-9 w-9 place-items-center rounded-xl bg-volt text-ink">
         <DumbbellIcon className="h-5 w-5" />
       </span>

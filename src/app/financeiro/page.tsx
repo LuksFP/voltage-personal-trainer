@@ -12,8 +12,7 @@ import {
   statusEfetivo,
   type StatusEfetivo,
 } from "@/lib/pagamentos";
-import { Badge, Button, Card, cx } from "@/components/ui";
-import { Avatar } from "@/app/page";
+import { Avatar, Badge, Button, Card, cx } from "@/components/ui";
 import {
   CalendarIcon,
   CheckIcon,
