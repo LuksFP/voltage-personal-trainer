@@ -11,6 +11,7 @@ import {
 import type { Treino } from "@/lib/types";
 import { TreinoEmAndamento } from "@/components/portal/TreinoEmAndamento";
 import { ConquistasPortal } from "@/components/portal/ConquistasPortal";
+import { RegistrarMedidas } from "./RegistrarMedidas";
 import { PortalEvolucao } from "@/components/portal/PortalEvolucao";
 import { PortalHistorico } from "@/components/portal/PortalHistorico";
 import { PerfilAlunoApp } from "./PerfilAlunoApp";
@@ -285,7 +286,8 @@ export function AlunoAppHome() {
 
         {aba === "evolucao" && (
           <div className="space-y-7">
-            <PortalEvolucao alunoId={aluno.id} />
+            <RegistrarMedidas alunoId={aluno.id} />
+            <PortalEvolucao alunoId={aluno.id} semPersonal={!vinculado} />
             <PortalHistorico alunoId={aluno.id} hoje={hoje} />
             <ConquistasPortal alunoId={aluno.id} modo="catalogo" />
           </div>

@@ -28,7 +28,14 @@ function numero(valor: number, casas = 1): string {
   return valor.toLocaleString("pt-BR", { maximumFractionDigits: casas });
 }
 
-export function PortalEvolucao({ alunoId }: { alunoId: string }) {
+export function PortalEvolucao({
+  alunoId,
+  semPersonal = false,
+}: {
+  alunoId: string;
+  /** Sem personal, os números do corpo são registrados pelo próprio aluno. */
+  semPersonal?: boolean;
+}) {
   const { avaliacoesDoAluno, historicoExercicios, getAluno } = useStore();
   const avaliacoes = avaliacoesDoAluno(alunoId);
   const analises = analisarExercicios(historicoExercicios, alunoId);
@@ -75,7 +82,9 @@ export function PortalEvolucao({ alunoId }: { alunoId: string }) {
         <p className="text-xs font-bold uppercase tracking-widest text-accent">Evolução</p>
         <h2 className="font-display mt-1 text-2xl font-semibold">Seu corpo e seus recordes</h2>
         <p className="mt-1 text-sm text-muted">
-          Dados registrados pelo seu personal e resultados das séries concluídas.
+          {semPersonal
+            ? "O que você anotou do seu corpo e o que saiu das séries concluídas."
+            : "Dados registrados pelo seu personal e resultados das séries concluídas."}
         </p>
       </section>
 
@@ -110,7 +119,9 @@ export function PortalEvolucao({ alunoId }: { alunoId: string }) {
         </h3>
         {disponiveis.length === 0 ? (
           <Card className="px-5 py-8 text-center text-sm text-muted">
-            A evolução corporal aparece depois da primeira avaliação física.
+            {semPersonal
+              ? "Registre seu peso aí em cima e o gráfico começa a existir."
+              : "A evolução corporal aparece depois da primeira avaliação física."}
           </Card>
         ) : (
           <Card className="p-4">
