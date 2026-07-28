@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useStore, type SerieExecutadaInput } from "@/lib/store";
 import { resumoDaExecucao } from "@/lib/historico-exercicios";
+import { sugerirCarga, type SugestaoDeCarga } from "@/lib/progressao";
 import { parseDescansoSegundos } from "@/lib/descanso";
 import {
   detalhesDoBloco,
@@ -595,6 +596,19 @@ export function TreinoEmAndamento({
     removeVideoExecucao(videoId);
   };
 
+  /** Joga a carga sugerida nas séries que ainda não foram marcadas. */
+  const aplicarCargaSugerida = (exercicioId: string, cargaKg: number) => {
+    garantirInicio();
+    const texto = String(cargaKg).replace(".", ",");
+    setSeriesPorExercicio((atual) => ({
+      ...atual,
+      [exercicioId]: (atual[exercicioId] ?? []).map((serie) =>
+        serie.concluida ? serie : { ...serie, modoCarga: "externa", valorKg: texto },
+      ),
+    }));
+    setErro(null);
+  };
+
   const alterarSerie = (exercicioId: string, serieId: string, patch: Partial<SerieDraft>) => {
     garantirInicio();
     setSeriesPorExercicio((atual) => ({
@@ -885,6 +899,9 @@ export function TreinoEmAndamento({
                         bibliotecaId: exercicio.bibliotecaId,
                       });
                       const resumo = ultima ? resumoDaExecucao(ultima) : undefined;
+                      const sugestao = ultima
+                        ? sugerirCarga(ultima, exercicio.repeticoes)
+                        : null;
                       const series = seriesPorExercicio[exercicio.id] ?? [];
                       const solicitacoesExercicio = solicitacoesSubstituicao.filter(
                         (solicitacao) =>
@@ -926,6 +943,14 @@ export function TreinoEmAndamento({
                                   {resumo.carga ? ` · ${resumo.carga}` : ""} ·{" "}
                                   {dataCurta(ultima.data)}
                                 </p>
+                              )}
+                              {sugestao && (
+                                <CargaSugerida
+                                  sugestao={sugestao}
+                                  onUsar={() =>
+                                    aplicarCargaSugerida(exercicio.id, sugestao.cargaSugeridaKg)
+                                  }
+                                />
                               )}
                             </div>
                             <div className="flex shrink-0 flex-col items-end gap-1.5">
@@ -1221,6 +1246,7 @@ export function TreinoEmAndamento({
                     bibliotecaId: exercicio.bibliotecaId,
                   });
                   const resumo = ultima ? resumoDaExecucao(ultima) : undefined;
+                  const sugestao = ultima ? sugerirCarga(ultima, exercicio.repeticoes) : null;
                   const series = seriesPorExercicio[exercicio.id] ?? [];
                   const ultimo = focoIndex === itensFoco.length - 1;
                   return (
@@ -1256,6 +1282,14 @@ export function TreinoEmAndamento({
                           Última vez: {resumo.series}×{resumo.repeticoes}
                           {resumo.carga ? ` · ${resumo.carga}` : ""} · {dataCurta(ultima.data)}
                         </p>
+                      )}
+                      {sugestao && (
+                        <CargaSugerida
+                          sugestao={sugestao}
+                          onUsar={() =>
+                            aplicarCargaSugerida(exercicio.id, sugestao.cargaSugeridaKg)
+                          }
+                        />
                       )}
                       {itemBiblioteca?.videoUrl && (
                         <a
@@ -1389,6 +1423,46 @@ export function TreinoEmAndamento({
         </div>
       )}
     </>
+  );
+}
+
+/**
+ * A conta da progressão em uma linha: o que fazer com a carga hoje e por quê.
+ * Fica logo abaixo do "último", que é a evidência de onde o número saiu.
+ */
+function CargaSugerida({
+  sugestao,
+  onUsar,
+}: {
+  sugestao: SugestaoDeCarga;
+  onUsar: () => void;
+}) {
+  const kg = sugestao.cargaSugeridaKg.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+      <span
+        className={cx(
+          "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wide",
+          sugestao.direcao === "sobe"
+            ? "bg-volt/15 text-volt"
+            : sugestao.direcao === "alivia"
+              ? "bg-danger/10 text-danger"
+              : "bg-surface-2 text-muted",
+        )}
+      >
+        {sugestao.direcao === "sobe" ? "Sobe" : sugestao.direcao === "alivia" ? "Alivia" : "Mantém"}
+      </span>
+      <span className="text-xs text-muted">
+        <strong className="font-bold text-text">{kg} kg</strong> hoje · {sugestao.motivo}
+      </span>
+      <button
+        type="button"
+        onClick={onUsar}
+        className="rounded-lg px-2 py-1 text-xs font-bold text-accent hover:bg-accent/10"
+      >
+        Usar
+      </button>
+    </div>
   );
 }
 

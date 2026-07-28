@@ -9,6 +9,8 @@ export interface PontoProgressao {
   e1rmKg: number;
   rpeMedio: number | null;
   repeticoesMax: number;
+  /** Menor repetição entre as séries de trabalho — diz se a faixa fechou toda. */
+  repeticoesMin: number;
 }
 
 export interface AnaliseExercicio {
@@ -83,6 +85,7 @@ function pontoDoHistorico(historico: HistoricoExercicioDetalhado): PontoProgress
     e1rmKg: Math.max(...e1rm),
     rpeMedio: mediaRpe(series),
     repeticoesMax: Math.max(...repeticoes),
+    repeticoesMin: Math.min(...repeticoes),
   };
 }
 
@@ -145,6 +148,113 @@ export function volumeTotalPorData(
 
 function arredondarMeioKg(valor: number): number {
   return Math.round(valor * 2) / 2;
+}
+
+function incrementoDeCarga(cargaKg: number): number {
+  return cargaKg < 20 ? 1 : cargaKg < 60 ? 2.5 : 5;
+}
+
+function formatarKg(valor: number): string {
+  return valor.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+}
+
+/** "8-12" → {min:8, max:12}; "10" → {min:10, max:10}; "até a falha" → null. */
+export function faixaDeRepeticoes(texto?: string): { min: number; max: number } | null {
+  if (!texto) return null;
+  const numeros = texto.match(/\d+/g)?.map(Number).filter((n) => n > 0) ?? [];
+  if (numeros.length === 0) return null;
+  const [primeiro, segundo] = numeros;
+  const min = primeiro;
+  const max = segundo !== undefined && segundo >= primeiro ? segundo : primeiro;
+  return { min, max };
+}
+
+export interface SugestaoDeCarga {
+  cargaAnteriorKg: number;
+  cargaSugeridaKg: number;
+  /** "sobe" | "mantém" | "alivia" — o que fazer hoje. */
+  direcao: "sobe" | "mantem" | "alivia";
+  /** Em que a conta se baseou: esforço declarado ou repetições fechadas. */
+  base: "rpe" | "repeticoes";
+  motivo: string;
+}
+
+/**
+ * Sugestão de carga para a série de hoje, a partir da última execução.
+ *
+ * Com RPE registrado, o esforço manda. Sem RPE — que é o caso de quem treina
+ * sozinho e não preenche esse campo —, vale a faixa de repetições: fechou o
+ * topo em todas as séries, sobe; ficou abaixo do piso, segura a carga.
+ * Sem nenhuma das duas informações não há o que sugerir, e a função devolve
+ * `null` em vez de encher a tela de palpite vazio.
+ */
+export function sugerirCarga(
+  historico: HistoricoExercicio,
+  repeticoesPrescritas?: string,
+): SugestaoDeCarga | null {
+  if (historico.formato !== "por-serie") return null;
+  const ponto = pontoDoHistorico(historico);
+  if (!ponto || ponto.cargaKg <= 0) return null;
+
+  const incremento = incrementoDeCarga(ponto.cargaKg);
+
+  if (ponto.rpeMedio != null) {
+    const rpe = ponto.rpeMedio;
+    if (rpe <= 8) {
+      return {
+        cargaAnteriorKg: ponto.cargaKg,
+        cargaSugeridaKg: arredondarMeioKg(ponto.cargaKg + incremento),
+        direcao: "sobe",
+        base: "rpe",
+        motivo: `Sobra fôlego: RPE médio ${rpe.toFixed(1)} da última vez.`,
+      };
+    }
+    if (rpe >= 9.5) {
+      return {
+        cargaAnteriorKg: ponto.cargaKg,
+        cargaSugeridaKg: arredondarMeioKg(ponto.cargaKg * 0.95),
+        direcao: "alivia",
+        base: "rpe",
+        motivo: `RPE médio ${rpe.toFixed(1)} — alivia hoje pra não travar a semana.`,
+      };
+    }
+    return {
+      cargaAnteriorKg: ponto.cargaKg,
+      cargaSugeridaKg: ponto.cargaKg,
+      direcao: "mantem",
+      base: "rpe",
+      motivo: `RPE médio ${rpe.toFixed(1)}: repete a carga e consolida.`,
+    };
+  }
+
+  const faixa = faixaDeRepeticoes(repeticoesPrescritas);
+  if (!faixa) return null;
+
+  if (ponto.repeticoesMin >= faixa.max) {
+    return {
+      cargaAnteriorKg: ponto.cargaKg,
+      cargaSugeridaKg: arredondarMeioKg(ponto.cargaKg + incremento),
+      direcao: "sobe",
+      base: "repeticoes",
+      motivo: `Você fechou ${faixa.max} repetições em todas as séries com ${formatarKg(ponto.cargaKg)} kg.`,
+    };
+  }
+  if (ponto.repeticoesMin < faixa.min) {
+    return {
+      cargaAnteriorKg: ponto.cargaKg,
+      cargaSugeridaKg: ponto.cargaKg,
+      direcao: "mantem",
+      base: "repeticoes",
+      motivo: `Da última vez uma série parou em ${ponto.repeticoesMin} — feche ${faixa.min} em todas antes de subir.`,
+    };
+  }
+  return {
+    cargaAnteriorKg: ponto.cargaKg,
+    cargaSugeridaKg: ponto.cargaKg,
+    direcao: "mantem",
+    base: "repeticoes",
+    motivo: `Mesma carga: falta chegar em ${faixa.max} repetições pra subir.`,
+  };
 }
 
 export function calcularSugestao(historico: HistoricoExercicio): SugestaoCalculada | null {
