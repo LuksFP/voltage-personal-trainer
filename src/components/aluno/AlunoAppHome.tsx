@@ -11,6 +11,7 @@ import {
 import type { Treino } from "@/lib/types";
 import { TreinoEmAndamento } from "@/components/portal/TreinoEmAndamento";
 import { ConquistasPortal } from "@/components/portal/ConquistasPortal";
+import { EditarTreino } from "./EditarTreino";
 import { RegistrarMedidas } from "./RegistrarMedidas";
 import { PortalEvolucao } from "@/components/portal/PortalEvolucao";
 import { PortalHistorico } from "@/components/portal/PortalHistorico";
@@ -67,6 +68,7 @@ export function AlunoAppHome() {
   const { conta, aluno, personal, vinculado } = useAlunoApp();
   const { treinosDoAluno, sessoes } = useStore();
   const [aba, setAba] = useState<Aba>("hoje");
+  const [editandoTreino, setEditandoTreino] = useState(false);
   const hoje = isoLocal(new Date());
 
   const treinoAtivo = useMemo<Treino | undefined>(() => {
@@ -241,18 +243,38 @@ export function AlunoAppHome() {
           </div>
         )}
 
-        {aba === "treino" && (
+        {aba === "treino" && editandoTreino && treinoAtivo && (
+          <EditarTreino
+            treino={treinoAtivo}
+            preferencias={conta.preferencias}
+            aoFechar={() => setEditandoTreino(false)}
+          />
+        )}
+
+        {aba === "treino" && !editandoTreino && (
           <section>
-            <div className="mb-4">
-              <p className="text-xs font-bold uppercase tracking-widest text-accent">Seu treino</p>
-              <h1 className="font-display mt-1 text-2xl font-semibold">
-                {treinoAtivo?.nome ?? "Treino"}
-              </h1>
-              <p className="mt-1 text-sm text-muted">
-                {vinculado
-                  ? `Montado por ${personal?.nome ?? "seu personal"}. Ele vê o que você marca aqui — inclusive os pedidos de troca.`
-                  : "Marque cada série conforme for fazendo. O descanso dispara sozinho."}
-              </p>
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-widest text-accent">Seu treino</p>
+                <h1 className="font-display mt-1 text-2xl font-semibold">
+                  {treinoAtivo?.nome ?? "Treino"}
+                </h1>
+                <p className="mt-1 text-sm text-muted">
+                  {vinculado
+                    ? `Montado por ${personal?.nome ?? "seu personal"}. Ele vê o que você marca aqui — inclusive os pedidos de troca.`
+                    : "Marque cada série conforme for fazendo. O descanso dispara sozinho."}
+                </p>
+              </div>
+              {/* Com personal, quem mexe na planilha é ele. */}
+              {!vinculado && treinoAtivo && (
+                <button
+                  type="button"
+                  onClick={() => setEditandoTreino(true)}
+                  className="shrink-0 rounded-lg px-2.5 py-1.5 text-sm font-semibold text-muted hover:bg-surface-2 hover:text-accent"
+                >
+                  Ajustar
+                </button>
+              )}
             </div>
 
             {!treinoAtivo || treinoAtivo.divisoes.length === 0 ? (

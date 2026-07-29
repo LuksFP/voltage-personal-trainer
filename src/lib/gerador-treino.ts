@@ -95,13 +95,26 @@ export function alternativasDoExercicio(
     biblioteca.find((item) => normalizar(item.nome) === nomeAtual);
   if (!referencia) return [];
 
-  const ocupados = new Set(jaNaDivisao.map(normalizar));
+  return exerciciosDisponiveis(biblioteca, prefs, {
+    grupo: referencia.grupo,
+    excluirNomes: [...jaNaDivisao, atual.nome],
+  }).filter((item) => item.id !== referencia.id);
+}
+
+/**
+ * O que da biblioteca cabe no treino de quem tem esse local e objetivo —
+ * opcionalmente de um grupo muscular só e sem repetir o que já está no dia.
+ */
+export function exerciciosDisponiveis(
+  biblioteca: ExercicioBiblioteca[],
+  prefs: Pick<PreferenciasTreino, "local" | "objetivo">,
+  filtros: { grupo?: GrupoMuscular; excluirNomes?: readonly string[] } = {},
+): ExercicioBiblioteca[] {
+  const ocupados = new Set((filtros.excluirNomes ?? []).map(normalizar));
   return biblioteca
     .filter(
       (item) =>
-        item.grupo === referencia.grupo &&
-        item.id !== referencia.id &&
-        normalizar(item.nome) !== nomeAtual &&
+        (filtros.grupo === undefined || item.grupo === filtros.grupo) &&
         !ocupados.has(normalizar(item.nome)) &&
         cabeNoContexto(item, prefs),
     )
@@ -144,6 +157,26 @@ function prescrever(prefs: PreferenciasTreino, composto: boolean): Prescricao {
   // Exercício composto pede mais descanso; isolado devolve mais rápido.
   const descanso = composto ? base.descanso + 15 : Math.max(30, base.descanso - 15);
   return { series, repeticoes: base.repeticoes, descanso };
+}
+
+/**
+ * Prescrição padrão pra um exercício que o aluno acrescenta à mão — mesma
+ * régua do gerador, tratando o novo como isolado (quem entra depois raramente
+ * é o pesado do dia).
+ */
+export function exercicioPadrao(
+  item: ExercicioBiblioteca,
+  prefs: PreferenciasTreino,
+): Omit<Exercicio, "id"> {
+  const receita = prescrever(prefs, false);
+  return {
+    nome: item.nome,
+    series: String(receita.series),
+    repeticoes: receita.repeticoes,
+    carga: cargaInicial(item.equipamento),
+    descanso: segundosParaTexto(receita.descanso),
+    bibliotecaId: item.id,
+  };
 }
 
 /* ---------- modelos de divisão ---------- */
