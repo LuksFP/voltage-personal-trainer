@@ -244,6 +244,11 @@ export function AlunoAppHome() {
                 {treinosNaSemana >= meta
                   ? "Meta da semana batida. Isso aí."
                   : `Faltam ${meta - treinosNaSemana} treino${meta - treinosNaSemana === 1 ? "" : "s"} pra fechar a semana.`}
+                {/* Sem a conta aberta, o "de 6" parece meta só de academia. */}
+                {esporte && (
+                  <> Sua meta soma {conta.preferencias.dias} na academia e {esporte.dias.length}{" "}
+                  de {esporte.nome}.</>
+                )}
               </p>
             </section>
 
@@ -265,10 +270,20 @@ export function AlunoAppHome() {
           <section>
             <div className="mb-4 flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-widest text-accent">Seu treino</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-accent">
+                  Sua planilha da academia
+                </p>
                 <h1 className="font-display mt-1 text-2xl font-semibold">
                   {treinoAtivo?.nome ?? "Treino"}
                 </h1>
+                {/* Objetivo é da musculação — sem isso, quem faz esporte lê o
+                    "— Força" do nome como se fosse a meta no esporte dele. */}
+                {!vinculado && (
+                  <p className="mt-1 text-sm text-muted">
+                    Objetivo na academia: <span className="text-text">{conta.preferencias.objetivo}</span>
+                    {esporte && <> · ajustada pro seu {esporte.nome}</>}
+                  </p>
+                )}
                 <p className="mt-1 text-sm text-muted">
                   {vinculado
                     ? `Montado por ${personal?.nome ?? "seu personal"}. Ele vê o que você marca aqui — inclusive os pedidos de troca.`

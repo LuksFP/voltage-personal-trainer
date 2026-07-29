@@ -54,7 +54,10 @@ export function SessaoEsporte({
       )}
     >
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-bold uppercase tracking-widest text-accent">{nome}</p>
+        {/* O rótulo diz o que a linha é; o nome do esporte é o título. Antes o
+            "JIU-JITSU" sozinho em destaque parecia o objetivo do treino. */}
+        <p className="text-xs font-bold uppercase tracking-widest text-muted">Fora da academia</p>
+        <p className="font-display mt-0.5 truncate text-lg font-semibold">{nome}</p>
         <p className="mt-0.5 text-sm text-muted">
           {registrada
             ? `Registrado às ${registrada.hora}. Conta na sua semana.`
