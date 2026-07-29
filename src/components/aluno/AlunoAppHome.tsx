@@ -13,6 +13,7 @@ import { TreinoEmAndamento } from "@/components/portal/TreinoEmAndamento";
 import { ConquistasPortal } from "@/components/portal/ConquistasPortal";
 import { EditarTreino } from "./EditarTreino";
 import { RegistrarMedidas } from "./RegistrarMedidas";
+import { SessaoEsporte } from "./SessaoEsporte";
 import { PortalEvolucao } from "@/components/portal/PortalEvolucao";
 import { PortalHistorico } from "@/components/portal/PortalHistorico";
 import { PerfilAlunoApp } from "./PerfilAlunoApp";
@@ -114,7 +115,10 @@ export function AlunoAppHome() {
   if (!conta || !aluno) return null;
 
   const primeiroNome = conta.nome.split(" ")[0];
-  const meta = conta.preferencias.dias;
+  const esporte = conta.preferencias.esporte;
+  const diaDeEsporte = esporte?.dias.includes(diaSemana) ?? false;
+  // Quem faz esporte tem mais dias de treino na semana do que dias de academia.
+  const meta = conta.preferencias.dias + (esporte?.dias.length ?? 0);
 
   return (
     <div className="min-h-screen pb-24">
@@ -204,12 +208,18 @@ export function AlunoAppHome() {
               </section>
             ) : (
               <section className="rounded-xl2 border border-line bg-surface/70 px-4 py-6 text-center">
-                <p className="font-display text-lg font-semibold">Dia de descanso 🌙</p>
+                <p className="font-display text-lg font-semibold">
+                  {diaDeEsporte ? `Hoje é dia de ${esporte?.nome}` : "Dia de descanso 🌙"}
+                </p>
                 <p className="mt-1 text-sm text-muted">
-                  Hoje não tem treino marcado. Se quiser adiantar, é só abrir a aba Treino.
+                  {diaDeEsporte
+                    ? "A academia fica de fora hoje de propósito — o esporte já é o treino."
+                    : "Hoje não tem treino marcado. Se quiser adiantar, é só abrir a aba Treino."}
                 </p>
               </section>
             )}
+
+            {esporte && <SessaoEsporte alunoId={aluno.id} esporte={esporte} hoje={hoje} />}
 
             {/* Semana: barra simples, não é card */}
             <section>

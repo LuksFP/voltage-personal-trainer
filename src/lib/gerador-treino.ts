@@ -17,12 +17,22 @@ import type {
 export type NivelAluno = "iniciante" | "intermediario" | "avancado";
 export type LocalTreino = "academia" | "casa";
 
+/** Esporte que o aluno pratica além da musculação. */
+export interface EsportePratica {
+  /** Nome livre: vem da lista ou é digitado pelo aluno em "Outro". */
+  nome: string;
+  /** Dias da semana em que ele treina o esporte (0=domingo … 6=sábado). */
+  dias: number[];
+}
+
 export interface PreferenciasTreino {
   objetivo: Objetivo;
   nivel: NivelAluno;
   /** Quantos dias por semana o aluno pretende treinar (2 a 6). */
   dias: number;
   local: LocalTreino;
+  /** Opcional — quem só faz musculação não tem esporte. */
+  esporte?: EsportePratica;
 }
 
 export interface PlanoGerado {
@@ -36,6 +46,110 @@ export const NIVEIS: { id: NivelAluno; label: string; detalhe: string }[] = [
   { id: "intermediario", label: "Intermediário", detalhe: "Treino com alguma regularidade há uns meses" },
   { id: "avancado", label: "Avançado", detalhe: "Treino sério e constante há mais de 2 anos" },
 ];
+
+/**
+ * Como cada esporte muda a musculação.
+ *
+ * `reforcar` é o que a academia deve somar ao esporte (prevenção e o que ele
+ * não treina); `poupar` é o que o esporte já castiga e por isso leva menos
+ * volume — ninguém aguenta perna pesada na academia treinando corrida quatro
+ * vezes por semana. Esporte fora da lista entra como texto livre: aí o ajuste
+ * é só na agenda, sem chutar ênfase.
+ */
+export interface EsporteInfo {
+  nome: string;
+  reforcar: GrupoMuscular[];
+  poupar: GrupoMuscular[];
+  /** Frase curta que o app mostra explicando o ajuste. */
+  resumo: string;
+}
+
+export const ESPORTES: EsporteInfo[] = [
+  {
+    nome: "Jiu-Jitsu",
+    reforcar: ["Costas", "Abdômen", "Pernas"],
+    poupar: ["Bíceps"],
+    resumo: "Mais costas e core; bíceps segura menos volume porque a pegada já vive no limite.",
+  },
+  {
+    nome: "Muay Thai",
+    reforcar: ["Pernas", "Abdômen", "Costas"],
+    poupar: ["Panturrilha"],
+    resumo: "Mais base de perna e core; panturrilha alivia, o salto do treino já dá conta.",
+  },
+  {
+    nome: "Boxe",
+    reforcar: ["Costas", "Abdômen", "Pernas"],
+    poupar: ["Ombro"],
+    resumo: "Mais costas e core pra segurar a guarda; ombro leva menos série.",
+  },
+  {
+    nome: "MMA",
+    reforcar: ["Costas", "Abdômen", "Pernas"],
+    poupar: ["Ombro"],
+    resumo: "Mais tronco e base; ombro reduz, já é o que mais apanha no tatame.",
+  },
+  {
+    nome: "Natação",
+    reforcar: ["Pernas", "Costas", "Abdômen"],
+    poupar: ["Ombro"],
+    resumo: "Mais perna e core (o que a água não treina); ombro reduz pra não somar desgaste.",
+  },
+  {
+    nome: "Corrida",
+    reforcar: ["Glúteos", "Abdômen", "Costas"],
+    poupar: ["Pernas"],
+    resumo: "Mais glúteo e core pra proteger joelho e lombar; perna com menos volume.",
+  },
+  {
+    nome: "Ciclismo",
+    reforcar: ["Costas", "Abdômen", "Glúteos"],
+    poupar: ["Pernas"],
+    resumo: "Mais costas e core pra postura; quadríceps já é servido no pedal.",
+  },
+  {
+    nome: "Futebol",
+    reforcar: ["Glúteos", "Abdômen", "Costas"],
+    poupar: ["Pernas"],
+    resumo: "Mais glúteo e core (posterior é onde a lesão mora); perna com menos volume.",
+  },
+  {
+    nome: "Vôlei",
+    reforcar: ["Pernas", "Costas", "Abdômen"],
+    poupar: ["Ombro"],
+    resumo: "Mais perna e costas pro salto e pra aterrissagem; ombro reduz por causa do ataque.",
+  },
+  {
+    nome: "Basquete",
+    reforcar: ["Pernas", "Glúteos", "Abdômen"],
+    poupar: ["Panturrilha"],
+    resumo: "Mais perna e glúteo pro salto; panturrilha alivia, a quadra já castiga.",
+  },
+  {
+    nome: "Tênis",
+    reforcar: ["Pernas", "Costas", "Abdômen"],
+    poupar: ["Ombro"],
+    resumo: "Mais base e rotação de tronco; ombro do saque leva menos volume.",
+  },
+  {
+    nome: "CrossFit",
+    reforcar: ["Costas", "Abdômen"],
+    poupar: ["Pernas"],
+    resumo: "Mais costas e core; perna reduz porque o WOD já entrega volume de sobra.",
+  },
+  {
+    nome: "Funcional",
+    reforcar: ["Costas", "Pernas"],
+    poupar: [],
+    resumo: "Mais carga nos compostos — a aula dá condicionamento, a academia dá força.",
+  },
+];
+
+export function esporteInfo(nome: string | undefined): EsporteInfo | undefined {
+  if (!nome) return undefined;
+  const alvo = nome.trim().toLowerCase();
+  return ESPORTES.find((item) => item.nome.toLowerCase() === alvo);
+}
 
 export const LOCAIS: { id: LocalTreino; label: string; detalhe: string }[] = [
   { id: "academia", label: "Academia", detalhe: "Tenho barra, máquinas e polia" },
@@ -255,6 +369,50 @@ const AGENDA_SEMANAL: Record<number, number[]> = {
   6: [1, 2, 3, 4, 5, 6],
 };
 
+/** Ordem de preferência pra ocupar um dia sobrando: meio de semana antes do fim. */
+const ORDEM_DOS_DIAS = [1, 3, 5, 2, 4, 6, 0];
+
+/**
+ * Encaixa os treinos nos dias livres do esporte. Se não sobrar dia suficiente
+ * (quem luta 5x e quer musculação 5x), mantém a agenda padrão e aceita a
+ * sobreposição — o app avisa em vez de inventar uma semana impossível.
+ */
+export function agendaSemanal(dias: number, diasEsporte?: number[]): number[] {
+  const base = AGENDA_SEMANAL[dias] ?? AGENDA_SEMANAL[3];
+  if (!diasEsporte || diasEsporte.length === 0) return base;
+
+  const ocupados = new Set(diasEsporte);
+  const escolhidos = base.filter((dia) => !ocupados.has(dia));
+  for (const dia of ORDEM_DOS_DIAS) {
+    if (escolhidos.length >= dias) break;
+    if (!ocupados.has(dia) && !escolhidos.includes(dia)) escolhidos.push(dia);
+  }
+  if (escolhidos.length < dias) return base;
+  return escolhidos.sort((a, b) => a - b);
+}
+
+/** Não sobram dias livres pra tudo: vai ter dia com esporte e musculação juntos. */
+export function semanaApertada(dias: number, diasEsporte?: number[]): boolean {
+  if (!diasEsporte || diasEsporte.length === 0) return false;
+  return 7 - new Set(diasEsporte).size < dias;
+}
+
+/**
+ * Troca o último acessório do dia por um grupo que complementa o esporte.
+ * Rotaciona entre os grupos de reforço pra não repetir o mesmo em toda divisão,
+ * e não mexe se o grupo já estiver no dia.
+ */
+function grupoDoDia(
+  grupos: GrupoMuscular[],
+  info: EsporteInfo | undefined,
+  indice: number,
+): GrupoMuscular[] {
+  if (!info || info.reforcar.length === 0 || grupos.length === 0) return grupos;
+  const alvo = info.reforcar[indice % info.reforcar.length];
+  if (grupos.includes(alvo)) return grupos;
+  return [...grupos.slice(0, -1), alvo];
+}
+
 /* ---------- montagem ---------- */
 
 function segundosParaTexto(segundos: number): string {
@@ -290,7 +448,8 @@ export function gerarPlano(
   const dias = Math.min(6, Math.max(2, prefs.dias));
   const catalogo = porGrupo(biblioteca, { ...prefs, dias });
   const lista = modelos({ ...prefs, dias });
-  const agenda = AGENDA_SEMANAL[dias] ?? AGENDA_SEMANAL[3];
+  const info = esporteInfo(prefs.esporte?.nome);
+  const agenda = agendaSemanal(dias, prefs.esporte?.dias);
   const quantidade = EXERCICIOS_POR_DIVISAO[prefs.nivel];
   // Usado no plano inteiro: evita o mesmo exercício aparecendo em vários dias.
   const usadosNoPlano = new Set<string>();
@@ -331,19 +490,24 @@ export function gerarPlano(
       usadosNaDivisao.add(item.id);
       // Os dois primeiros do dia são os pesados (compostos).
       const receita = prescrever(prefs, exercicios.length < 2);
+      // Grupo que o esporte já castiga sai com uma série a menos (nunca abaixo de 2).
+      const poupado = info?.poupar.includes(item.grupo) ?? false;
       sequencia += 1;
       exercicios.push({
         id: `gerado_${sequencia}_${Date.now().toString(36)}`,
         nome: item.nome,
-        series: String(receita.series),
+        series: String(poupado ? Math.max(2, receita.series - 1) : receita.series),
         repeticoes: receita.repeticoes,
         carga: cargaInicial(item.equipamento),
         descanso: segundosParaTexto(receita.descanso),
         bibliotecaId: item.id,
+        observacoes: poupado
+          ? `Volume reduzido: ${prefs.esporte?.nome} já castiga ${item.grupo.toLowerCase()}.`
+          : undefined,
       });
     };
 
-    for (const grupo of modelo.grupos.slice(0, quantidade)) {
+    for (const grupo of grupoDoDia(modelo.grupos.slice(0, quantidade), info, indice)) {
       const item = escolher(grupo, indice, usadosNaDivisao);
       if (item) adicionar(item);
     }
@@ -388,7 +552,7 @@ export function gerarPlano(
     nome: `Treino ${letras} — ${prefs.objetivo}`,
     descricao: `Gerado pelo app · ${dias}x por semana · ${
       prefs.local === "casa" ? "em casa" : "academia"
-    }`,
+    }${prefs.esporte ? ` · ajustado pra ${prefs.esporte.nome}` : ""}`,
     divisoes,
   };
 }

@@ -6,10 +6,12 @@ import {
   LOCAIS,
   NIVEIS,
   gerarPlano,
+  type EsportePratica,
   type LocalTreino,
   type NivelAluno,
   type PreferenciasTreino,
 } from "@/lib/gerador-treino";
+import { EscolherEsporte } from "./EscolherEsporte";
 import type { NovaContaAluno } from "@/lib/aluno-app";
 import type { Objetivo } from "@/lib/types";
 import { cx } from "@/components/ui";
@@ -41,7 +43,7 @@ const DIAS_OPCOES: { dias: number; rotulo: string }[] = [
   { dias: 6, rotulo: "Divisão em 6 treinos" },
 ];
 
-const TOTAL_ETAPAS = 5;
+const TOTAL_ETAPAS = 6;
 
 interface Rascunho {
   nome: string;
@@ -49,6 +51,8 @@ interface Rascunho {
   nivel?: NivelAluno;
   dias?: number;
   local?: LocalTreino;
+  /** Sem esporte = só musculação. */
+  esporte?: EsportePratica;
 }
 
 function Opcao({
@@ -104,9 +108,12 @@ export function OnboardingAluno({
   const [erro, setErro] = useState<string | null>(null);
 
   const preferencias = useMemo<PreferenciasTreino | null>(() => {
-    const { objetivo, nivel, dias, local } = rascunho;
+    const { objetivo, nivel, dias, local, esporte } = rascunho;
     if (!objetivo || !nivel || dias == null || !local) return null;
-    return { objetivo, nivel, dias, local };
+    // Esporte sem nome (clicou em "Outro" e não digitou) não conta.
+    const praticado =
+      esporte && esporte.nome.trim() ? { ...esporte, nome: esporte.nome.trim() } : undefined;
+    return { objetivo, nivel, dias, local, esporte: praticado };
   }, [rascunho]);
 
   // Prévia real: o mesmo gerador que vai criar a planilha de verdade.
@@ -118,6 +125,10 @@ export function OnboardingAluno({
   const avancar = () => {
     if (etapa === 1 && rascunho.nome.trim().length < 2) {
       setErro("Escreve teu nome pra eu não te chamar de 'aluno'.");
+      return;
+    }
+    if (etapa === 5 && rascunho.esporte && rascunho.esporte.nome.trim().length < 2) {
+      setErro("Escreve qual esporte — ou marca 'Só musculação'.");
       return;
     }
     setErro(null);
@@ -282,6 +293,30 @@ export function OnboardingAluno({
             <section>
               <p className="text-xs font-bold uppercase tracking-widest text-accent">Etapa 5</p>
               <h1 className="font-display mt-1 text-3xl font-bold leading-tight">
+                Você pratica algum esporte?
+              </h1>
+              <p className="mt-2 text-sm text-muted">
+                Luta, natação, corrida, bola de fim de semana. A academia entra pra somar com
+                isso — não pra competir com isso.
+              </p>
+              <div className="mt-6">
+                <EscolherEsporte
+                  valor={rascunho.esporte}
+                  diasTreino={rascunho.dias ?? 3}
+                  aoMudar={(esporte) => {
+                    setErro(null);
+                    setRascunho((r) => ({ ...r, esporte }));
+                  }}
+                />
+              </div>
+              {erro && <p className="mt-3 text-sm font-semibold text-danger">{erro}</p>}
+            </section>
+          )}
+
+          {etapa === 6 && (
+            <section>
+              <p className="text-xs font-bold uppercase tracking-widest text-accent">Etapa 6</p>
+              <h1 className="font-display mt-1 text-3xl font-bold leading-tight">
                 Onde você vai treinar?
               </h1>
               <p className="mt-2 text-sm text-muted">
@@ -296,7 +331,7 @@ export function OnboardingAluno({
                     selecionada={rascunho.local === item.id}
                     onClick={() => {
                       setRascunho((r) => ({ ...r, local: item.id }));
-                      setEtapa(6);
+                      setEtapa(7);
                     }}
                   />
                 ))}
@@ -304,7 +339,7 @@ export function OnboardingAluno({
             </section>
           )}
 
-          {etapa === 6 && previa && (
+          {etapa === 7 && previa && (
             <section>
               <p className="text-xs font-bold uppercase tracking-widest text-accent">Pronto</p>
               <h1 className="font-display mt-1 text-3xl font-bold leading-tight">
@@ -337,17 +372,19 @@ export function OnboardingAluno({
         </div>
 
         {/* rodapé de ação: só nas etapas que não avançam sozinhas */}
-        {(etapa === 1 || etapa === 6) && (
+        {(etapa === 1 || etapa === 5 || etapa === 7) && (
           <div className="pt-6">
             <button
               type="button"
-              onClick={etapa === 6 ? concluir : avancar}
+              onClick={etapa === 7 ? concluir : avancar}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-volt px-5 py-3.5 font-display text-base font-bold text-ink transition-transform hover:-translate-y-0.5 active:translate-y-0"
             >
-              {etapa === 6 ? (
+              {etapa === 7 ? (
                 <>
                   <CheckIcon className="h-5 w-5" /> Começar a treinar
                 </>
+              ) : etapa === 5 && !rascunho.esporte ? (
+                "Só faço musculação"
               ) : (
                 "Continuar"
               )}

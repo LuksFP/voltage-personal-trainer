@@ -10,6 +10,7 @@ import {
   type PreferenciasTreino,
 } from "@/lib/gerador-treino";
 import type { Objetivo } from "@/lib/types";
+import { EscolherEsporte } from "./EscolherEsporte";
 import { Button, Field, Select } from "@/components/ui";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SwapIcon, TrashIcon } from "@/components/icons";
@@ -41,11 +42,22 @@ export function PerfilAlunoApp() {
 
   if (!conta || !rascunho) return null;
 
+  const esporteAtual = conta.preferencias.esporte;
   const mudou =
     rascunho.objetivo !== conta.preferencias.objetivo ||
     rascunho.nivel !== conta.preferencias.nivel ||
     rascunho.dias !== conta.preferencias.dias ||
-    rascunho.local !== conta.preferencias.local;
+    rascunho.local !== conta.preferencias.local ||
+    rascunho.esporte?.nome !== esporteAtual?.nome ||
+    (rascunho.esporte?.dias ?? []).join() !== (esporteAtual?.dias ?? []).join();
+
+  /** "Outro" sem nome digitado não vira esporte. */
+  const limpar = (prefs: PreferenciasTreino): PreferenciasTreino => ({
+    ...prefs,
+    esporte: prefs.esporte?.nome.trim()
+      ? { ...prefs.esporte, nome: prefs.esporte.nome.trim() }
+      : undefined,
+  });
 
   return (
     <div className="space-y-8">
@@ -159,11 +171,19 @@ export function PerfilAlunoApp() {
           </Select>
         </Field>
 
+        <Field label="Esporte além da academia" grupo>
+          <EscolherEsporte
+            valor={rascunho.esporte}
+            diasTreino={rascunho.dias}
+            aoMudar={(esporte) => setRascunho({ ...rascunho, esporte })}
+          />
+        </Field>
+
         <div className="flex flex-wrap gap-2">
           <Button
             disabled={!mudou}
             onClick={() => {
-              atualizarPreferencias(rascunho);
+              atualizarPreferencias(limpar(rascunho));
               setAviso(
                 vinculado
                   ? "Plano atualizado. Seu personal vê a mudança no seu cadastro."

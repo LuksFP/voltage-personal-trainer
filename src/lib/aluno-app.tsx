@@ -82,6 +82,16 @@ interface AlunoAppContextValue {
 
 const AlunoAppContext = createContext<AlunoAppContextValue | null>(null);
 
+/**
+ * O que o personal vê no campo "modalidade" do cadastro. O esporte entra junto
+ * porque muda tudo pra quem for pegar esse aluno: quem luta 3x na semana não
+ * pode receber a mesma planilha de quem só faz academia.
+ */
+function rotuloModalidade(prefs: PreferenciasTreino): string {
+  const base = prefs.local === "casa" ? "Treino em casa" : "Musculação";
+  return prefs.esporte ? `${base} + ${prefs.esporte.nome}` : base;
+}
+
 function lerConta(): ContaAluno | null {
   try {
     const raw = localStorage.getItem(CONTA_KEY);
@@ -147,7 +157,7 @@ export function AlunoAppProvider({ children }: { children: ReactNode }) {
       addAluno({
         nome: dados.nome.trim(),
         objetivo: dados.preferencias.objetivo,
-        modalidade: dados.preferencias.local === "casa" ? "Treino em casa" : "Musculação",
+        modalidade: rotuloModalidade(dados.preferencias),
         contaApp: true,
       });
 
@@ -184,7 +194,7 @@ export function AlunoAppProvider({ children }: { children: ReactNode }) {
         if (!conta || !aluno) return;
         updateAluno(conta.alunoId, {
           objetivo: preferencias.objetivo,
-          modalidade: preferencias.local === "casa" ? "Treino em casa" : "Musculação",
+          modalidade: rotuloModalidade(preferencias),
         });
         // Com personal, a mudança de preferência é recado pra ele — a planilha
         // dele não pode ser sobrescrita por um treino gerado.
