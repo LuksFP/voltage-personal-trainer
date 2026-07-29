@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Aluno, Objetivo } from "@/lib/types";
+import { EscolherEsporte } from "./EscolherEsporte";
 import { Button, Field, Input, Select, Textarea } from "./ui";
 
 export const OBJETIVOS: Objetivo[] = [
@@ -35,6 +36,9 @@ export type AlunoFormValues = {
   email: string;
   objetivo: Objetivo | "";
   modalidade: string;
+  /** Esporte praticado fora da academia; vazio = nenhum. */
+  esporte: string;
+  esporteDias: number[];
   pesoMeta: string; // string no form; convertida pra número na página
   mensalidade: string; // R$ — string no form
   diaVencimento: string; // 1-28 — string no form
@@ -59,6 +63,8 @@ export function AlunoForm({
     email: initial?.email ?? "",
     objetivo: initial?.objetivo ?? "",
     modalidade: initial?.modalidade ?? "",
+    esporte: initial?.esporte ?? "",
+    esporteDias: initial?.esporteDias ?? [],
     pesoMeta: initial?.pesoMeta != null ? String(initial.pesoMeta).replace(".", ",") : "",
     mensalidade: initial?.mensalidade != null ? String(initial.mensalidade).replace(".", ",") : "",
     diaVencimento: initial?.diaVencimento != null ? String(initial.diaVencimento) : "",
@@ -80,6 +86,8 @@ export function AlunoForm({
             ...v,
             nome: v.nome.trim(),
             modalidade: v.modalidade.trim(),
+            esporte: v.esporte.trim(),
+            esporteDias: v.esporte.trim() ? v.esporteDias : [],
             pesoMeta: v.pesoMeta.trim(),
           });
       }}
@@ -138,6 +146,21 @@ export function AlunoForm({
           </datalist>
         </Field>
       </div>
+
+      <Field
+        label="Esporte que pratica"
+        hint="Muda o que reforçar, o que poupar e em que dias a academia entra"
+        grupo
+      >
+        <EscolherEsporte
+          valor={v.esporte ? { nome: v.esporte, dias: v.esporteDias } : undefined}
+          diasTreino={0}
+          aoMudar={(esporte) => {
+            set("esporte", esporte?.nome ?? "");
+            set("esporteDias", esporte?.dias ?? []);
+          }}
+        />
+      </Field>
 
       <Field label="Meta de peso (kg)" hint="Vira uma linha-alvo no gráfico de evolução">
         <Input

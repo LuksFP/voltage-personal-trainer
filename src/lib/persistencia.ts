@@ -47,7 +47,7 @@ import { ehPerguntaParQId, PERGUNTAS_PARQ } from "./anamnese";
 import { ehMedidaCorporalMeta } from "./metas";
 import { isInteressado } from "./interessados";
 
-export const CURRENT_SCHEMA_VERSION = 19;
+export const CURRENT_SCHEMA_VERSION = 20;
 
 type UnknownRecord = Record<string, unknown>;
 

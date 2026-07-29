@@ -11,7 +11,7 @@ import {
   type NivelAluno,
   type PreferenciasTreino,
 } from "@/lib/gerador-treino";
-import { EscolherEsporte } from "./EscolherEsporte";
+import { EscolherEsporte } from "@/components/EscolherEsporte";
 import type { NovaContaAluno } from "@/lib/aluno-app";
 import type { Objetivo } from "@/lib/types";
 import { cx } from "@/components/ui";
@@ -194,7 +194,7 @@ export function OnboardingAluno({
                 <span className="text-volt">seu treino.</span>
               </h1>
               <p className="mt-3 text-muted">
-                Cinco perguntas rápidas e você sai daqui com a planilha pronta. Sem personal, sem
+                Seis perguntas rápidas e você sai daqui com a planilha pronta. Sem personal, sem
                 mensalidade.
               </p>
               <label htmlFor="nome-aluno" className="mt-8 block text-sm font-semibold text-muted">

@@ -61,6 +61,8 @@ export default function AlunosPage() {
       email: v.email || undefined,
       objetivo: v.objetivo || undefined,
       modalidade: v.modalidade || undefined,
+      esporte: v.esporte || undefined,
+      esporteDias: v.esporte ? v.esporteDias : undefined,
       pesoMeta: parsePesoMeta(v.pesoMeta),
       mensalidade: parseMensalidade(v.mensalidade),
       diaVencimento: parseDiaVencimento(v.diaVencimento),

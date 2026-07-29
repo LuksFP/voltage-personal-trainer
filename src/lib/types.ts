@@ -14,6 +14,12 @@ export interface Aluno {
   email?: string;
   objetivo?: Objetivo;
   modalidade?: string;
+  // Esporte que o aluno pratica além da musculação — informado por ele no app
+  // ou pelo personal no cadastro. Muda a planilha: o que reforçar, o que
+  // poupar e em que dias a academia entra (ver ESPORTES em gerador-treino).
+  esporte?: string;
+  /** Dias da semana do esporte (0=domingo … 6=sábado). */
+  esporteDias?: number[];
   pesoMeta?: number; // kg — meta de peso, vira linha-alvo no gráfico de evolução
   mensalidade?: number; // R$ — valor da mensalidade; base para gerar cobranças
   diaVencimento?: number; // 1-28 — dia do mês em que a mensalidade vence

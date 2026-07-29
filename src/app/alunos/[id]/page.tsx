@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useStore } from "@/lib/store";
+import { rotuloDias } from "@/lib/dias-treino";
 import { Avatar, Badge, Button, Card } from "@/components/ui";
 import { Modal } from "@/components/Modal";
 import { AlunoForm, type AlunoFormValues } from "@/components/AlunoForm";
@@ -62,6 +63,8 @@ export default function AlunoPage() {
       email: v.email || undefined,
       objetivo: v.objetivo || undefined,
       modalidade: v.modalidade || undefined,
+      esporte: v.esporte || undefined,
+      esporteDias: v.esporte ? v.esporteDias : undefined,
       pesoMeta: parsePesoMeta(v.pesoMeta),
       mensalidade: parseMensalidade(v.mensalidade),
       diaVencimento: parseDiaVencimento(v.diaVencimento),
@@ -119,6 +122,14 @@ export default function AlunoPage() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <InfoCard icon={<TargetIcon className="h-5 w-5" />} label="Objetivo" value={aluno.objetivo ?? "—"} />
         <InfoCard label="Modalidade" value={aluno.modalidade ?? "—"} />
+        <InfoCard
+          label="Esporte"
+          value={
+            aluno.esporte
+              ? `${aluno.esporte}${rotuloDias(aluno.esporteDias) ? ` · ${rotuloDias(aluno.esporteDias)}` : ""}`
+              : "—"
+          }
+        />
         <InfoCard icon={<PhoneIcon className="h-5 w-5" />} label="Contato" value={aluno.telefone ?? aluno.email ?? "—"} />
         <InfoCard label="E-mail" value={aluno.email ?? "—"} />
       </div>

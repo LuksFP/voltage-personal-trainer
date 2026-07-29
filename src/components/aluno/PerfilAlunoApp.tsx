@@ -10,7 +10,7 @@ import {
   type PreferenciasTreino,
 } from "@/lib/gerador-treino";
 import type { Objetivo } from "@/lib/types";
-import { EscolherEsporte } from "./EscolherEsporte";
+import { EscolherEsporte } from "@/components/EscolherEsporte";
 import { Button, Field, Select } from "@/components/ui";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SwapIcon, TrashIcon } from "@/components/icons";

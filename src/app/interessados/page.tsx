@@ -294,6 +294,8 @@ export default function InteressadosPage() {
         email: values.email || undefined,
         objetivo: values.objetivo || undefined,
         modalidade: values.modalidade || undefined,
+        esporte: values.esporte || undefined,
+        esporteDias: values.esporte ? values.esporteDias : undefined,
         pesoMeta: parsePesoMeta(values.pesoMeta),
         mensalidade: parseMensalidade(values.mensalidade),
         diaVencimento: parseDiaVencimento(values.diaVencimento),

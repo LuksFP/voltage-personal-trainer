@@ -158,6 +158,8 @@ export function AlunoAppProvider({ children }: { children: ReactNode }) {
         nome: dados.nome.trim(),
         objetivo: dados.preferencias.objetivo,
         modalidade: rotuloModalidade(dados.preferencias),
+        esporte: dados.preferencias.esporte?.nome,
+        esporteDias: dados.preferencias.esporte?.dias,
         contaApp: true,
       });
 
@@ -195,6 +197,8 @@ export function AlunoAppProvider({ children }: { children: ReactNode }) {
         updateAluno(conta.alunoId, {
           objetivo: preferencias.objetivo,
           modalidade: rotuloModalidade(preferencias),
+          esporte: preferencias.esporte?.nome,
+          esporteDias: preferencias.esporte?.dias,
         });
         // Com personal, a mudança de preferência é recado pra ele — a planilha
         // dele não pode ser sobrescrita por um treino gerado.
