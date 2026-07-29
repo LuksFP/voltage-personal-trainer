@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import type { AlimentoBanco, PlanoAlimentar } from "@/lib/types";
 import {
   caloriasDosMacros,
@@ -53,10 +53,16 @@ function parseNumero(texto: string): number | undefined {
   return Number.isFinite(valor) ? valor : undefined;
 }
 
-function inicialDoPlano(
-  plano: PlanoAlimentar | undefined,
-  novaChave: () => string,
-): PlanoFormValues {
+// Chave só pro React identificar a linha (refeição/alimento) — nunca vai pro store.
+// Fica fora do componente porque o estado inicial é montado durante o render, e
+// ler um ref nessa hora é proibido.
+let sequenciaChave = 0;
+function novaChave(): string {
+  sequenciaChave += 1;
+  return `f${sequenciaChave}`;
+}
+
+function inicialDoPlano(plano: PlanoAlimentar | undefined): PlanoFormValues {
   if (plano) {
     return {
       titulo: plano.titulo,
@@ -115,12 +121,7 @@ export function PlanoAlimentarForm({
   onSubmit: (input: CriarPlanoAlimentarInput) => void;
   onCancel: () => void;
 }) {
-  const contador = useRef(0);
-  const novaChave = () => {
-    contador.current += 1;
-    return `f${contador.current}`;
-  };
-  const [form, setForm] = useState<PlanoFormValues>(() => inicialDoPlano(plano, novaChave));
+  const [form, setForm] = useState<PlanoFormValues>(() => inicialDoPlano(plano));
   const [erro, setErro] = useState<string | null>(null);
 
   const bancoOrdenado = useMemo(() => ordenarAlimentosBanco(banco), [banco]);

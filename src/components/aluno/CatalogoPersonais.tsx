@@ -145,11 +145,14 @@ export function CatalogoPersonais() {
     ordenacao: "relevancia",
   }));
 
-  const cidades = useMemo(() => cidadesDisponiveis(perfisPublicos), [perfisPublicos]);
-  const resultados = useMemo(
-    () => filtrarPersonais(perfisPublicos, filtro),
-    [perfisPublicos, filtro],
+  // Quem já acompanha o aluno tem lugar próprio no topo — não faz sentido
+  // reaparecer na lista de "outros personais" com o selo de "você já chamou".
+  const outros = useMemo(
+    () => perfisPublicos.filter((perfil) => perfil.id !== personal?.id),
+    [perfisPublicos, personal],
   );
+  const cidades = useMemo(() => cidadesDisponiveis(outros), [outros]);
+  const resultados = useMemo(() => filtrarPersonais(outros, filtro), [outros, filtro]);
   const pedidoPor = useMemo(
     () => new Set(pedidos.map((pedido) => pedido.personalPublicoId)),
     [pedidos],
@@ -258,7 +261,7 @@ export function CatalogoPersonais() {
 
       <div className="mt-4 flex items-center justify-between gap-3">
         <span className="text-sm font-semibold text-muted">
-          {resultados.length} personal{resultados.length === 1 ? "" : "s"}
+          {resultados.length} {resultados.length === 1 ? "personal" : "personais"}
         </span>
         <div className="flex items-center gap-2">
           {temFiltro && (

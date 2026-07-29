@@ -77,7 +77,6 @@ import {
 } from "./nutricao";
 import {
   normalizarAlimentoBancoInput,
-  ordenarAlimentosBanco,
   type CriarAlimentoBancoInput,
 } from "./alimentos";
 import { CURRENT_SCHEMA_VERSION, migrarStoreData } from "./persistencia";
@@ -514,6 +513,12 @@ interface StoreContextValue extends StoreData {
   addExercicio: (treinoId: string, divisaoId: string, ex: Omit<Exercicio, "id">) => void;
   updateExercicio: (treinoId: string, divisaoId: string, ex: Exercicio) => void;
   removeExercicio: (treinoId: string, divisaoId: string, exId: string) => void;
+  moverExercicio: (
+    treinoId: string,
+    divisaoId: string,
+    exId: string,
+    direcao: -1 | 1,
+  ) => void;
   addBlocoTreino: (treinoId: string, divisaoId: string, bloco: BlocoTreinoInput) => void;
   updateBlocoTreino: (treinoId: string, divisaoId: string, bloco: BlocoTreino) => void;
   removeBlocoTreino: (treinoId: string, divisaoId: string, blocoId: string) => void;
@@ -637,6 +642,16 @@ function removerExercicioDosBlocos(divisao: Divisao, exercicioId: string): Bloco
       exercicioIds: bloco.exercicioIds.filter((id) => id !== exercicioId),
     }))
     .filter((bloco) => bloco.exercicioIds.length >= minimoExerciciosBloco(bloco.tipo));
+}
+
+/** Troca um exercício de lugar com o vizinho. Nas pontas, não faz nada. */
+function trocarPosicao(exercicios: Exercicio[], exercicioId: string, direcao: -1 | 1): Exercicio[] {
+  const de = exercicios.findIndex((exercicio) => exercicio.id === exercicioId);
+  const para = de + direcao;
+  if (de < 0 || para < 0 || para >= exercicios.length) return exercicios;
+  const copia = [...exercicios];
+  [copia[de], copia[para]] = [copia[para], copia[de]];
+  return copia;
 }
 
 // Data de hoje em YYYY-MM-DD local (sem deslocamento de fuso do toISOString).
@@ -3465,6 +3480,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                   exercicios: dv.exercicios.filter((e) => e.id !== exId),
                   blocos: removerExercicioDosBlocos(dv, exId),
                 }
+              : dv,
+          ),
+        })),
+      moverExercicio: (treinoId, divisaoId, exId, direcao) =>
+        mutTreino(treinoId, (t) => ({
+          ...t,
+          divisoes: t.divisoes.map((dv) =>
+            dv.id === divisaoId
+              ? { ...dv, exercicios: trocarPosicao(dv.exercicios, exId, direcao) }
               : dv,
           ),
         })),
