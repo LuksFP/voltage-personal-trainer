@@ -15,15 +15,13 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
 
   const publica = ROTAS_PUBLICAS.includes(pathname);
   // Rotas do aluno: abertas, sem login do personal e fora do Shell.
-  // A raiz é o app do aluno; `/portal` é o link que o personal manda e `/app`
-  // é o endereço antigo do app, que só redireciona pra raiz.
-  const doAluno =
-    pathname === "/" || pathname.startsWith("/portal") || pathname.startsWith("/app");
+  // `/portal` é o link que o personal manda; `/app` é o app do aluno.
+  const doAluno = pathname.startsWith("/portal") || pathname.startsWith("/app");
 
   useEffect(() => {
     if (loading || doAluno) return;
     if (!personal && !publica) router.replace("/login");
-    if (personal && publica) router.replace("/painel");
+    if (personal && publica) router.replace("/");
   }, [personal, loading, publica, doAluno, router]);
 
   // O lado do aluno não depende da sessão do personal — renderiza direto.

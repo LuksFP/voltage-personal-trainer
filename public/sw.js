@@ -10,7 +10,7 @@
 */
 
 const CACHE = "voltage-v1";
-const CASCA = "/";
+const CASCA = "/app";
 
 self.addEventListener("install", (evento) => {
   evento.waitUntil(

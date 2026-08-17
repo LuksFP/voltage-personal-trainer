@@ -6,8 +6,8 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Voltage",
     description:
       "Monte seu treino, registre cada série e acompanhe sua evolução — com ou sem personal.",
-    // O app instalado abre na raiz, que é o app do aluno.
-    start_url: "/",
+    // O app instalado abre direto no lado do aluno, não no painel do personal.
+    start_url: "/app",
     scope: "/",
     display: "standalone",
     orientation: "portrait",

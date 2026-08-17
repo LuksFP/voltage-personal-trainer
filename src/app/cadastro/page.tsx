@@ -21,7 +21,7 @@ export default function CadastroPage() {
     if (nome.trim().length < 2) return setErro("Informe seu nome.");
     if (senha.length < 4) return setErro("A senha precisa ter ao menos 4 caracteres.");
     const r = cadastrar(nome, email, senha);
-    if (r.ok) router.replace("/painel");
+    if (r.ok) router.replace("/");
     else setErro(r.erro ?? "Não foi possível criar a conta.");
   };
 
