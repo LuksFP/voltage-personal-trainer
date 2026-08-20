@@ -1,39 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { ultimoBackup } from "@/lib/backup";
-import { calcularAlertasPersonal, type AlertaPersonal } from "@/lib/alertas";
-import { Avatar, Badge, Card, cx } from "@/components/ui";
+import { HojeDoPersonal } from "@/components/HojeDoPersonal";
+import { TarefasDoPersonal } from "@/components/TarefasDoPersonal";
+import { Avatar, Badge, Card } from "@/components/ui";
 import {
   CalendarIcon,
   ChartIcon,
   ChevronRightIcon,
-  ClockIcon,
   DownloadIcon,
   DumbbellIcon,
-  TargetIcon,
   UsersIcon,
   XIcon,
 } from "@/components/icons";
-
-const INTERVALOS_SEM_TREINO = [7, 14, 30] as const;
-type IntervaloSemTreino = (typeof INTERVALOS_SEM_TREINO)[number];
-
-function isoLocal(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
+import { paraIso } from "@/lib/data";
 
 export default function DashboardPage() {
-  const { alunos, treinos, sessoes, avaliacoes, historicoExercicios } = useStore();
-  const [diasSemTreino, setDiasSemTreino] = useState<IntervaloSemTreino>(14);
+  const { alunos, treinos, sessoes, avaliacoes } = useStore();
 
   const ativos = alunos.filter((a) => a.ativo);
-  const hojeIso = isoLocal(new Date());
+  const hojeIso = paraIso(new Date());
 
   // Empurrãozinho de backup: só quando há dado real e nunca se exportou nada.
   const [semBackup] = useState(() => ultimoBackup() === null);
@@ -57,26 +46,9 @@ export default function DashboardPage() {
   })();
   const maxModalidade = Math.max(1, ...porModalidade.map((m) => m.qtd));
 
-  const alertas = useMemo(
-    () =>
-      calcularAlertasPersonal(
-        { alunos, treinos, sessoes, historicoExercicios },
-        { diasSemTreino, diasFeedback: 14, diasEvolucao: 45 },
-      ),
-    [alunos, treinos, sessoes, historicoExercicios, diasSemTreino],
-  );
-  const totalAlertas =
-    alertas.semTreino.length +
-    alertas.semPresenca.length +
-    alertas.feedbackRuim.length +
-    alertas.dor.length +
-    alertas.semEvolucao.length;
-
   const recentes = [...alunos]
     .sort((a, b) => +new Date(b.criadoEm) - +new Date(a.criadoEm))
     .slice(0, 4);
-
-  const nomeAluno = (id: string) => alunos.find((a) => a.id === id)?.nome ?? "Aluno removido";
 
   return (
     <div className="space-y-8">
@@ -127,6 +99,11 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* O dia de trabalho primeiro: no celular é a primeira coisa na tela */}
+      <HojeDoPersonal />
+
+      <TarefasDoPersonal />
+
       {/* Stats — grid assimétrico (primeiro card maior) */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat
@@ -151,143 +128,39 @@ export default function DashboardPage() {
       </div>
 
       <section>
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-display text-xl font-semibold">Alertas do personal</h2>
-              {totalAlertas > 0 ? (
-                <Badge tone="off">{totalAlertas} alerta{totalAlertas === 1 ? "" : "s"}</Badge>
-              ) : (
-                <Badge tone="volt">Tudo em dia</Badge>
-              )}
-            </div>
-            <p className="mt-1 text-sm text-muted">
-              Feedback e dor consideram os últimos 14 dias. Evolução de carga considera 45 dias.
-            </p>
-          </div>
-          <div className="inline-flex self-start rounded-xl border border-line bg-surface p-1 text-sm font-semibold">
-            {INTERVALOS_SEM_TREINO.map((dias) => (
-              <button
-                key={dias}
-                onClick={() => setDiasSemTreino(dias)}
-                className={cx(
-                  "rounded-lg px-3 py-1.5 transition-colors",
-                  diasSemTreino === dias ? "bg-volt text-ink" : "text-muted hover:text-text",
-                )}
-              >
-                {dias}d
-              </button>
-            ))}
-          </div>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-display flex items-center gap-2 text-xl font-semibold">
+            <ChartIcon className="h-5 w-5 text-accent" />
+            Por modalidade
+          </h2>
+          <Link href="/relatorios" className="text-sm font-semibold text-muted hover:text-accent">
+            Ver relatórios
+          </Link>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          <AlertaCard
-            titulo="Sem treino ativo"
-            icon={<DumbbellIcon className="h-4 w-4" />}
-            itens={alertas.semTreino}
-            vazio="Todos os ativos têm planilha."
-          />
-          <AlertaCard
-            titulo={`Sem treinar há ${diasSemTreino}d`}
-            icon={<ClockIcon className="h-4 w-4" />}
-            itens={alertas.semPresenca}
-            vazio="Frequência em dia."
-          />
-          <AlertaCard
-            titulo="Feedback ruim"
-            icon={<XIcon className="h-4 w-4" />}
-            itens={alertas.feedbackRuim}
-            vazio="Sem feedback crítico."
-          />
-          <AlertaCard
-            titulo="Dor moderada/forte"
-            icon={<TargetIcon className="h-4 w-4" />}
-            itens={alertas.dor}
-            vazio="Sem dor relevante."
-          />
-          <AlertaCard
-            titulo="Carga parada"
-            icon={<ChartIcon className="h-4 w-4" />}
-            itens={alertas.semEvolucao}
-            vazio="Sem alerta de carga."
-          />
-        </div>
-      </section>
-
-      {/* Agenda de hoje + Por modalidade */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display flex items-center gap-2 text-xl font-semibold">
-              <ClockIcon className="h-5 w-5 text-accent" />
-              Agenda de hoje
-            </h2>
-            <Link href="/agenda" className="text-sm font-semibold text-muted hover:text-accent">
-              Abrir agenda
-            </Link>
-          </div>
-
-          {sessoesHoje.length === 0 ? (
-            <Card className="px-5 py-10 text-center text-sm text-muted">
-              Nenhuma sessão agendada para hoje.
-            </Card>
-          ) : (
-            <div className="space-y-2">
-              {sessoesHoje.map((s) => (
-                <Card key={s.id} className="flex items-center gap-3 p-3.5">
-                  <span className="font-display w-14 shrink-0 text-lg font-bold text-accent">
-                    {s.hora}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{nomeAluno(s.alunoId)}</p>
-                    {s.foco && <p className="truncate text-sm text-muted">{s.foco}</p>}
-                  </div>
-                  {s.status === "realizada" && <Badge tone="volt">Feito</Badge>}
-                  {s.status === "faltou" && <Badge tone="off">Faltou</Badge>}
-                  {s.status === "agendada" && <Badge tone="neutral">Agendada</Badge>}
-                  {s.status === "cancelada" && <Badge tone="neutral">Cancelada</Badge>}
-                </Card>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display flex items-center gap-2 text-xl font-semibold">
-              <ChartIcon className="h-5 w-5 text-accent" />
-              Por modalidade
-            </h2>
-            <Link href="/relatorios" className="text-sm font-semibold text-muted hover:text-accent">
-              Ver relatórios
-            </Link>
-          </div>
-
-          {porModalidade.length === 0 ? (
-            <Card className="px-5 py-10 text-center text-sm text-muted">
-              Sem alunos ativos ainda.
-            </Card>
-          ) : (
-            <Card className="space-y-3 p-5">
-              {porModalidade.map((m) => (
-                <div key={m.nome}>
-                  <div className="mb-1 flex items-center justify-between text-sm">
-                    <span className="font-semibold">{m.nome}</span>
-                    <span className="text-muted">{m.qtd}</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-surface-2">
-                    <div
-                      className="h-full rounded-full bg-volt"
-                      style={{ width: `${(m.qtd / maxModalidade) * 100}%` }}
-                    />
-                  </div>
+        {porModalidade.length === 0 ? (
+          <Card className="px-5 py-10 text-center text-sm text-muted">
+            Sem alunos ativos ainda.
+          </Card>
+        ) : (
+          <Card className="space-y-3 p-5">
+            {porModalidade.map((m) => (
+              <div key={m.nome}>
+                <div className="mb-1 flex items-center justify-between text-sm">
+                  <span className="font-semibold">{m.nome}</span>
+                  <span className="text-muted">{m.qtd}</span>
                 </div>
-              ))}
-            </Card>
-          )}
-        </section>
-      </div>
+                <div className="h-2 overflow-hidden rounded-full bg-surface-2">
+                  <div
+                    className="h-full rounded-full bg-volt"
+                    style={{ width: `${(m.qtd / maxModalidade) * 100}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </Card>
+        )}
+      </section>
 
       {/* Alunos recentes */}
       <section>
@@ -322,73 +195,6 @@ export default function DashboardPage() {
         </div>
       </section>
     </div>
-  );
-}
-
-function AlertaCard({
-  titulo,
-  icon,
-  itens,
-  vazio,
-}: {
-  titulo: string;
-  icon: React.ReactNode;
-  itens: AlertaPersonal[];
-  vazio: string;
-}) {
-  const visiveis = itens.slice(0, 4);
-  const ocultos = Math.max(0, itens.length - visiveis.length);
-
-  return (
-    <Card className="overflow-hidden">
-      <div className="flex items-center justify-between gap-2 border-b border-line bg-surface-2/40 p-3.5">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">{titulo}</p>
-          <p className="text-xs text-muted">
-            {itens.length} aluno{itens.length === 1 ? "" : "s"}
-          </p>
-        </div>
-        <span
-          className={cx(
-            "grid h-8 w-8 shrink-0 place-items-center rounded-lg",
-            itens.length > 0 ? "bg-danger/10 text-danger" : "bg-accent/10 text-accent",
-          )}
-        >
-          {icon}
-        </span>
-      </div>
-
-      {visiveis.length === 0 ? (
-        <p className="px-4 py-6 text-center text-sm text-muted">{vazio}</p>
-      ) : (
-        <div className="divide-y divide-line">
-          {visiveis.map((alerta) => (
-            <Link
-              key={`${alerta.tipo}-${alerta.alunoId}`}
-              href={`/alunos/${alerta.alunoId}`}
-              className="flex items-start gap-3 p-3.5 transition-colors hover:bg-surface-2/60"
-            >
-              <Avatar nome={alerta.nome} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="truncate text-sm font-semibold">{alerta.nome}</p>
-                  {alerta.prioridade === "alta" && <Badge tone="off">Alto</Badge>}
-                </div>
-                <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-muted">
-                  {alerta.detalhe}
-                </p>
-              </div>
-              <ChevronRightIcon className="mt-3 h-4 w-4 shrink-0 text-muted" />
-            </Link>
-          ))}
-          {ocultos > 0 && (
-            <p className="px-4 py-2.5 text-center text-xs font-semibold text-muted">
-              +{ocultos} outro{ocultos === 1 ? "" : "s"}
-            </p>
-          )}
-        </div>
-      )}
-    </Card>
   );
 }
 
