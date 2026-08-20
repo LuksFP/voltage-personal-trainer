@@ -22,6 +22,7 @@ import {
   TargetIcon,
   TrashIcon,
 } from "./icons";
+import { hojeIso } from "@/lib/data";
 
 type ProgramaFormValues = Pick<
   ProgramaTreino,
@@ -44,15 +45,8 @@ const STATUS_TONE: Record<StatusPrograma, "neutral" | "volt" | "off"> = {
   cancelado: "off",
 };
 
-function isoHoje(): string {
-  const agora = new Date();
-  const mes = String(agora.getMonth() + 1).padStart(2, "0");
-  const dia = String(agora.getDate()).padStart(2, "0");
-  return `${agora.getFullYear()}-${mes}-${dia}`;
-}
-
 function progressoDoPrograma(programa: ProgramaTreino): number {
-  const hoje = isoHoje();
+  const hoje = hojeIso();
   if (hoje <= programa.dataInicio) return 0;
   if (hoje >= programa.dataFim) return 100;
   const total = Math.max(1, diferencaDias(programa.dataInicio, programa.dataFim));
@@ -292,7 +286,7 @@ function ProgramaCard({
   const fases = [...programa.fases].sort((a, b) => a.ordem - b.ordem);
   const semanas = duracaoProgramaSemanas(programa);
   const progresso = progressoDoPrograma(programa);
-  const hoje = isoHoje();
+  const hoje = hojeIso();
   const faseAtual = fases.find((fase) => {
     const intervalo = intervaloFase(programa, fase);
     return hoje >= intervalo.inicio && hoje <= intervalo.fim;
@@ -541,7 +535,7 @@ function ProgramaForm({
   onSubmit: (values: ProgramaFormValues) => void;
   onCancel: () => void;
 }) {
-  const hoje = isoHoje();
+  const hoje = hojeIso();
   const [nome, setNome] = useState(initial?.nome ?? "");
   const [objetivo, setObjetivo] = useState(initial?.objetivo ?? "");
   const [dataInicio, setDataInicio] = useState(initial?.dataInicio ?? hoje);

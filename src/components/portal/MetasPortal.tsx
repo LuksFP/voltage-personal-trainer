@@ -6,14 +6,7 @@ import { cx } from "@/components/ui";
 import { calcularProgressoMeta } from "@/lib/metas";
 import { useStore } from "@/lib/store";
 import type { MetaAluno } from "@/lib/types";
-
-function dataLocalHoje(): string {
-  const hoje = new Date();
-  const ano = hoje.getFullYear();
-  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
-  const dia = String(hoje.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
+import { hojeIso } from "@/lib/data";
 
 function formatarNumero(valor: number): string {
   return valor.toLocaleString("pt-BR", {
@@ -60,7 +53,7 @@ function rotuloTipo(meta: MetaAluno): string {
 
 export function MetasPortal({ alunoId }: { alunoId: string }) {
   const store = useStore();
-  const hoje = useMemo(() => dataLocalHoje(), []);
+  const hoje = useMemo(() => hojeIso(), []);
   const metasAtivas = store.metasDoAluno(alunoId).filter((meta) => meta.status === "ativa");
   const dados = useMemo(
     () => ({

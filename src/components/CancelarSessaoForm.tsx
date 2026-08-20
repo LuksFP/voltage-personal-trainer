@@ -1,10 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  conflitosEntreCandidatosEExistentes,
-  somarDiasIso,
-} from "@/lib/agenda";
+import { conflitosEntreCandidatosEExistentes } from "@/lib/agenda";
 import {
   useStore,
   type CancelarSessaoOpcoes,
@@ -12,6 +9,7 @@ import {
 } from "@/lib/store";
 import type { Sessao } from "@/lib/types";
 import { Button, Field, Input, Textarea } from "./ui";
+import { somarDias } from "@/lib/data";
 
 export function CancelarSessaoForm({
   sessao,
@@ -26,7 +24,7 @@ export function CancelarSessaoForm({
   const [escopo, setEscopo] = useState<EscopoRecorrenciaSessao>("esta");
   const [motivo, setMotivo] = useState("");
   const [criarReposicao, setCriarReposicao] = useState(false);
-  const [dataReposicao, setDataReposicao] = useState(() => somarDiasIso(sessao.data, 1));
+  const [dataReposicao, setDataReposicao] = useState(() => somarDias(sessao.data, 1));
   const [horaReposicao, setHoraReposicao] = useState(sessao.hora);
   const [permitirConflito, setPermitirConflito] = useState(false);
   const [erro, setErro] = useState<string | null>(null);

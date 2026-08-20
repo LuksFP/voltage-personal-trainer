@@ -18,13 +18,7 @@ import {
   TrashIcon,
   XIcon,
 } from "@/components/icons";
-
-function isoLocal(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
+import { paraIso } from "@/lib/data";
 
 function mondayOf(base: Date): Date {
   const diff = (base.getDay() + 6) % 7;
@@ -60,14 +54,14 @@ export default function AgendaPage() {
   const [dataPadrao, setDataPadrao] = useState<string | undefined>();
   const [erro, setErro] = useState<string | null>(null);
 
-  const hojeIso = isoLocal(new Date());
+  const hojeIso = paraIso(new Date());
   const segunda = useMemo(() => addDays(mondayOf(new Date()), weekOffset * 7), [weekOffset]);
 
   const dias = useMemo(
     () =>
       Array.from({ length: 7 }, (_, i) => {
         const d = addDays(segunda, i);
-        const iso = isoLocal(d);
+        const iso = paraIso(d);
         return {
           iso,
           nome: DIAS[i],

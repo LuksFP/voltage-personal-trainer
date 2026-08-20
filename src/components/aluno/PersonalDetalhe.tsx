@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useStore } from "@/lib/store";
+import { useAcoes } from "@/lib/store";
 import { useAlunoApp } from "@/lib/aluno-app";
 import { MODALIDADE_LABEL, precoEmReais } from "@/lib/catalogo";
 import type { PersonalPublico } from "@/lib/types";
@@ -31,7 +31,7 @@ export function PersonalDetalhe({
   perfil: PersonalPublico;
   aoVoltar: () => void;
 }) {
-  const { addInteressado } = useStore();
+  const { addInteressado } = useAcoes();
   const { conta, pedidos, registrarPedido, personal, vinculado } = useAlunoApp();
   const pedidoExistente = pedidos.find((item) => item.personalPublicoId === perfil.id);
   const eMeuPersonal = personal?.id === perfil.id;

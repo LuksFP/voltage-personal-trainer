@@ -1,18 +1,15 @@
 import type { FasePrograma, ProgramaTreino } from "./types";
+import { paraIso } from "@/lib/data";
 
 function dateFromIso(iso: string): Date {
   const [ano, mes, dia] = iso.split("-").map(Number);
   return new Date(Date.UTC(ano, mes - 1, dia));
 }
 
-function isoFromDate(data: Date): string {
-  return data.toISOString().slice(0, 10);
-}
-
 export function adicionarDias(iso: string, dias: number): string {
   const data = dateFromIso(iso);
   data.setUTCDate(data.getUTCDate() + dias);
-  return isoFromDate(data);
+  return paraIso(data);
 }
 
 export function diferencaDias(inicio: string, fim: string): number {

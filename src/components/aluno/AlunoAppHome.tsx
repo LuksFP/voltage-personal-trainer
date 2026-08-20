@@ -29,6 +29,8 @@ import {
   SearchIcon,
   UsersIcon,
 } from "@/components/icons";
+import { paraIso } from "@/lib/data";
+import { somarDias } from "@/lib/data";
 
 type Aba = "hoje" | "treino" | "evolucao" | "personais" | "perfil";
 
@@ -40,27 +42,14 @@ const ABAS: { id: Aba; label: string; icon: typeof GridIcon }[] = [
   { id: "perfil", label: "Perfil", icon: UsersIcon },
 ];
 
-function isoLocal(data: Date): string {
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
-
-function subtrairDias(iso: string, dias: number): string {
-  const data = new Date(`${iso}T00:00:00`);
-  data.setDate(data.getDate() - dias);
-  return isoLocal(data);
-}
-
 /** Dias seguidos (contando de hoje pra trás) em que houve treino. */
 function calcularSequencia(datas: Set<string>, hoje: string): number {
   let sequencia = 0;
   // Se ainda não treinou hoje, a sequência pode estar viva desde ontem.
-  let cursor = datas.has(hoje) ? hoje : subtrairDias(hoje, 1);
+  let cursor = datas.has(hoje) ? hoje : somarDias(hoje, -(1));
   while (datas.has(cursor)) {
     sequencia += 1;
-    cursor = subtrairDias(cursor, 1);
+    cursor = somarDias(cursor, -(1));
   }
   return sequencia;
 }
@@ -70,7 +59,7 @@ export function AlunoAppHome() {
   const { treinosDoAluno, sessoes } = useStore();
   const [aba, setAba] = useState<Aba>("hoje");
   const [editandoTreino, setEditandoTreino] = useState(false);
-  const hoje = isoLocal(new Date());
+  const hoje = paraIso(new Date());
 
   const treinoAtivo = useMemo<Treino | undefined>(() => {
     if (!aluno) return undefined;
@@ -108,7 +97,7 @@ export function AlunoAppHome() {
   );
 
   const treinosNaSemana = useMemo(() => {
-    const inicio = subtrairDias(hoje, 6);
+    const inicio = somarDias(hoje, -(6));
     return realizadas.filter((s) => s.data >= inicio).length;
   }, [realizadas, hoje]);
 

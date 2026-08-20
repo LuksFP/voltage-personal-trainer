@@ -9,13 +9,7 @@ import {
 import { useStore } from "@/lib/store";
 import { AlertTriangleIcon, ChevronRightIcon, ReportIcon } from "./icons";
 import { Badge, Card, cx } from "./ui";
-
-function dataCurta(dataIso: string): string {
-  return new Date(`${dataIso}T12:00:00`).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-  });
-}
+import { fmtDiaMesCurto } from "@/lib/data";
 
 export function ResumoRelatoriosSemanais() {
   const store = useStore();
@@ -66,7 +60,7 @@ export function ResumoRelatoriosSemanais() {
             <h2 className="font-display text-xl font-semibold">Relatórios semanais prontos</h2>
           </div>
           <p className="mt-1 text-sm text-muted">
-            Semana de {dataCurta(referencia)} a {dataCurta(relatorios[0].periodo.fim)}, ordenada por
+            Semana de {fmtDiaMesCurto(referencia)} a {fmtDiaMesCurto(relatorios[0].periodo.fim)}, ordenada por
             atenção.
           </p>
         </div>

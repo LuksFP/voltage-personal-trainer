@@ -9,6 +9,7 @@ import { ExercicioForm, type ExercicioValues } from "./ExercicioForm";
 import { Modal } from "./Modal";
 import { PencilIcon, PlusIcon, TrashIcon } from "./icons";
 import { Button, Input, cx } from "./ui";
+import { fmtDiaMes } from "@/lib/data";
 
 export interface EstruturaTreinoEditorProps {
   alunoId?: string;
@@ -748,13 +749,6 @@ function CampoNumero({
   );
 }
 
-function dataCurta(iso: string): string {
-  return new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-  });
-}
-
 function ExercicioRow({
   alunoId,
   exercicio,
@@ -786,7 +780,7 @@ function ExercicioRow({
           <p className="truncate text-xs font-semibold text-accent">
             Último: {resumoUltimaExecucao.series}×{resumoUltimaExecucao.repeticoes}
             {resumoUltimaExecucao.carga ? ` · ${resumoUltimaExecucao.carga}` : ""} ·{" "}
-            {dataCurta(ultimaExecucao.data)}
+            {fmtDiaMes(ultimaExecucao.data)}
           </p>
         )}
         <p className="text-xs text-muted sm:hidden">

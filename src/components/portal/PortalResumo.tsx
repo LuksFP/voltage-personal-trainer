@@ -4,25 +4,7 @@ import { useStore } from "@/lib/store";
 import { analisarExercicios } from "@/lib/progressao";
 import { Card } from "@/components/ui";
 import { ChartIcon, CheckIcon, TargetIcon, TrendUpIcon } from "@/components/icons";
-
-function subtrairDias(iso: string, dias: number): string {
-  const data = new Date(`${iso}T12:00:00`);
-  data.setDate(data.getDate() - dias);
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
-
-function inicioSemana(iso: string): string {
-  const data = new Date(`${iso}T12:00:00`);
-  const deslocamento = (data.getDay() + 6) % 7;
-  data.setDate(data.getDate() - deslocamento);
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
+import { inicioDaSemana, somarDias } from "@/lib/data";
 
 export function PortalResumo({
   alunoId,
@@ -37,9 +19,9 @@ export function PortalResumo({
   const realizadas = sessoes.filter(
     (sessao) => sessao.alunoId === alunoId && sessao.status === "realizada",
   );
-  const semana = realizadas.filter((sessao) => sessao.data >= inicioSemana(hoje)).length;
+  const semana = realizadas.filter((sessao) => sessao.data >= inicioDaSemana(hoje)).length;
   const ultimos30 = realizadas.filter(
-    (sessao) => sessao.data >= subtrairDias(hoje, 29) && sessao.data <= hoje,
+    (sessao) => sessao.data >= somarDias(hoje, -(29)) && sessao.data <= hoje,
   ).length;
   const analises = analisarExercicios(historicoExercicios, alunoId);
   const avaliacoes = avaliacoesDoAluno(alunoId);

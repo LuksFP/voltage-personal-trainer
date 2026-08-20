@@ -8,6 +8,7 @@ import type {
   MetaAluno,
   Sessao,
 } from "./types";
+import { paraIso } from "./data";
 
 interface MetaInputBase {
   titulo: string;
@@ -73,10 +74,7 @@ const DATA_LOCAL = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 function dataLocalHoje(referencia: Date = new Date()): string {
   if (Number.isNaN(referencia.getTime())) throw new Error("A data de referência é inválida.");
-  const ano = referencia.getFullYear();
-  const mes = String(referencia.getMonth() + 1).padStart(2, "0");
-  const dia = String(referencia.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
+  return paraIso(referencia);
 }
 
 export function validarDataMeta(data: string): string {

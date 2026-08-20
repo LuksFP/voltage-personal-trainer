@@ -9,8 +9,9 @@ import type {
 import { resumoHabitosDoDia } from "./habitos";
 import { chaveExercicio } from "./progressao";
 import { seriesDeTrabalho } from "./historico-exercicios";
+import { dataUtc, paraIso } from "./data";
+import { inicioDaSemana, somarDias } from "./data";
 
-const DATA_LOCAL = /^(\d{4})-(\d{2})-(\d{2})$/;
 const ORDEM_HABITOS: HabitoDiario[] = [
   "agua",
   "passos",
@@ -175,59 +176,26 @@ function arredondar(valor: number, casas = 1): number {
   return Math.round(valor * fator) / fator;
 }
 
-function dataUtc(data: string): Date {
-  const partes = DATA_LOCAL.exec(data);
-  if (!partes) throw new Error("Use uma data no formato YYYY-MM-DD.");
-  const ano = Number(partes[1]);
-  const mes = Number(partes[2]);
-  const dia = Number(partes[3]);
-  const resultado = new Date(Date.UTC(ano, mes - 1, dia));
-  if (
-    resultado.getUTCFullYear() !== ano ||
-    resultado.getUTCMonth() !== mes - 1 ||
-    resultado.getUTCDate() !== dia
-  ) {
-    throw new Error("A data informada é inválida.");
-  }
-  return resultado;
-}
-
 function dataLocalHoje(referencia: Date | string = new Date()): string {
   if (typeof referencia === "string") {
     dataUtc(referencia);
     return referencia;
   }
   if (Number.isNaN(referencia.getTime())) throw new Error("A data de referência é inválida.");
-  const ano = referencia.getFullYear();
-  const mes = String(referencia.getMonth() + 1).padStart(2, "0");
-  const dia = String(referencia.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
-
-export function somarDiasRelatorio(data: string, dias: number): string {
-  if (!Number.isInteger(dias)) throw new Error("O deslocamento de dias deve ser inteiro.");
-  const resultado = dataUtc(data);
-  resultado.setUTCDate(resultado.getUTCDate() + dias);
-  return resultado.toISOString().slice(0, 10);
+  return paraIso(referencia);
 }
 
 function diferencaDias(inicio: string, fim: string): number {
   return Math.round((dataUtc(fim).getTime() - dataUtc(inicio).getTime()) / 86_400_000);
 }
 
-function inicioSemana(data: string): string {
-  const referencia = dataUtc(data);
-  const desdeSegunda = (referencia.getUTCDay() + 6) % 7;
-  return somarDiasRelatorio(data, -desdeSegunda);
-}
-
 export function semanaPadraoRelatorioSemanal(hoje: Date | string = new Date()): string {
-  return somarDiasRelatorio(inicioSemana(dataLocalHoje(hoje)), -7);
+  return somarDias(inicioDaSemana(dataLocalHoje(hoje)), -7);
 }
 
 export function semanaAnteriorRelatorio(semanaInicio: string): string {
   validarSegunda(semanaInicio);
-  return somarDiasRelatorio(semanaInicio, -7);
+  return somarDias(semanaInicio, -7);
 }
 
 function validarSegunda(data: string): void {
@@ -238,7 +206,7 @@ function validarSegunda(data: string): void {
 
 function criarPeriodo(semanaInicio: string, hoje: string): PeriodoRelatorioSemanal {
   validarSegunda(semanaInicio);
-  const fim = somarDiasRelatorio(semanaInicio, 6);
+  const fim = somarDias(semanaInicio, 6);
   if (semanaInicio > hoje) throw new Error("Não é possível gerar um relatório de uma semana futura.");
   const fimEfetivo = fim > hoje ? hoje : fim;
   return {

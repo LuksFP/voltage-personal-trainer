@@ -21,6 +21,7 @@ import {
   MoonIcon,
 } from "@/components/icons";
 import { Button, Input, cx } from "@/components/ui";
+import { somarDias } from "@/lib/data";
 
 type Icone = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -65,17 +66,8 @@ function parseNumero(valor: string, inteiro = false): number | undefined {
   return inteiro ? Math.round(numero) : numero;
 }
 
-function dataDeslocada(dataIso: string, deslocamento: number): string {
-  const data = new Date(`${dataIso}T12:00:00`);
-  data.setDate(data.getDate() + deslocamento);
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
-
 function diasRecentes(hoje: string): string[] {
-  return Array.from({ length: 7 }, (_, indice) => dataDeslocada(hoje, indice - 6));
+  return Array.from({ length: 7 }, (_, indice) => somarDias(hoje, indice - 6));
 }
 
 function diaCurto(dataIso: string): string {

@@ -27,6 +27,7 @@ import {
   TrashIcon,
 } from "./icons";
 import { Badge, Button, Card, Input, cx } from "./ui";
+import { hojeIso, somarDias } from "@/lib/data";
 
 type Icone = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -106,23 +107,6 @@ function parseMeta(valor: string, inteiro: boolean): number | null {
   return inteiro ? Math.round(numero) : numero;
 }
 
-function dataDeslocada(dataIso: string, deslocamento: number): string {
-  const data = new Date(`${dataIso}T12:00:00`);
-  data.setDate(data.getDate() + deslocamento);
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
-
-function hojeLocal(): string {
-  const agora = new Date();
-  const ano = agora.getFullYear();
-  const mes = String(agora.getMonth() + 1).padStart(2, "0");
-  const dia = String(agora.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
-
 function formatarData(dataIso: string): { dia: string; semana: string } {
   const data = new Date(`${dataIso}T12:00:00`);
   return {
@@ -148,7 +132,7 @@ export function HabitosAluno({ alunoId }: { alunoId: string }) {
   } = useStore();
   const configuracao = configuracaoHabitosDoAluno(alunoId);
   const registros = registrosHabitosDoAluno(alunoId);
-  const hoje = hojeLocal();
+  const hoje = hojeIso();
   const [configurando, setConfigurando] = useState(!configuracao);
 
   return (
@@ -363,7 +347,7 @@ function PainelHabitos({
 }) {
   const sequencias = calcularSequenciasHabitos(registros, hoje);
   const datas = useMemo(
-    () => Array.from({ length: 14 }, (_, indice) => dataDeslocada(hoje, indice - 13)),
+    () => Array.from({ length: 14 }, (_, indice) => somarDias(hoje, indice - 13)),
     [hoje],
   );
   const ultimosSete = datas.slice(-7);

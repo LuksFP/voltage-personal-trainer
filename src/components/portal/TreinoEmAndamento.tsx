@@ -42,6 +42,7 @@ import {
   TrashIcon,
   VideoIcon,
 } from "@/components/icons";
+import { fmtDiaMes } from "@/lib/data";
 
 const ESCALA_TREINO = [1, 2, 3, 4, 5] as const satisfies readonly EscalaTreino[];
 const NIVEIS_DOR: NivelDor[] = ["Sem dor", "Leve", "Moderada", "Forte"];
@@ -267,13 +268,6 @@ function converterSerie(serie: SerieDraft): SerieExecutadaInput | null {
     concluidaEm: serie.concluidaEm ?? new Date().toISOString(),
     observacoes: serie.observacoes.trim() || undefined,
   };
-}
-
-function dataCurta(iso: string): string {
-  return new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-  });
 }
 
 export function TreinoEmAndamento({
@@ -974,7 +968,7 @@ export function TreinoEmAndamento({
                                 <p className="mt-1 text-xs font-semibold text-accent">
                                   Último: {resumo.series}×{resumo.repeticoes}
                                   {resumo.carga ? ` · ${resumo.carga}` : ""} ·{" "}
-                                  {dataCurta(ultima.data)}
+                                  {fmtDiaMes(ultima.data)}
                                 </p>
                               )}
                               {sugestao && (
@@ -1341,7 +1335,7 @@ export function TreinoEmAndamento({
                       {resumo && ultima && (
                         <p className="mt-2 text-xs font-semibold text-accent">
                           Última vez: {resumo.series}×{resumo.repeticoes}
-                          {resumo.carga ? ` · ${resumo.carga}` : ""} · {dataCurta(ultima.data)}
+                          {resumo.carga ? ` · ${resumo.carga}` : ""} · {fmtDiaMes(ultima.data)}
                         </p>
                       )}
                       {sugestao && (

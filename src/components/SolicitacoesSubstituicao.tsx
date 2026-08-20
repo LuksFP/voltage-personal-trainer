@@ -7,6 +7,7 @@ import { Modal } from "./Modal";
 import { RevisarSubstituicaoForm } from "./RevisarSubstituicaoForm";
 import { Badge, Button, Card } from "./ui";
 import { CheckIcon, SwapIcon, XIcon } from "./icons";
+import { fmtDataHora } from "@/lib/data";
 
 const motivoLabel = {
   "equipamento-indisponivel": "Equipamento indisponível",
@@ -14,15 +15,6 @@ const motivoLabel = {
   dificuldade: "Dificuldade na execução",
   outro: "Outro motivo",
 } as const;
-
-function dataHora(iso: string): string {
-  return new Date(iso).toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 export function SolicitacoesSubstituicao({ alunoId }: { alunoId: string }) {
   const {
@@ -66,7 +58,7 @@ export function SolicitacoesSubstituicao({ alunoId }: { alunoId: string }) {
                     {motivoLabel[solicitacao.motivo]}
                   </p>
                 </div>
-                <span className="shrink-0 text-[10px] text-muted">{dataHora(solicitacao.criadoEm)}</span>
+                <span className="shrink-0 text-[10px] text-muted">{fmtDataHora(solicitacao.criadoEm)}</span>
               </div>
               {solicitacao.detalhes && (
                 <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted">{solicitacao.detalhes}</p>

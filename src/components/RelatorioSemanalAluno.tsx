@@ -1,14 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import {
-  gerarRelatorioSemanal,
-  semanaPadraoRelatorioSemanal,
-  somarDiasRelatorio,
-  type AlertaRelatorioSemanal,
-  type ComparacaoMetricaSemanal,
-  type RelatorioSemanal,
-} from "@/lib/relatorio-semanal";
+import { gerarRelatorioSemanal, semanaPadraoRelatorioSemanal, type AlertaRelatorioSemanal, type ComparacaoMetricaSemanal, type RelatorioSemanal } from "@/lib/relatorio-semanal";
 import { linkWhatsapp } from "@/lib/compartilhar";
 import { useStore } from "@/lib/store";
 import {
@@ -26,13 +19,7 @@ import {
   WhatsappIcon,
 } from "./icons";
 import { Badge, Button, Card, cx } from "./ui";
-
-function dataCurta(dataIso: string): string {
-  return new Date(`${dataIso}T12:00:00`).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-  });
-}
+import { fmtDiaMesCurto, somarDias } from "@/lib/data";
 
 function formatarNumero(valor: number, casas = 0): string {
   return valor.toLocaleString("pt-BR", {
@@ -72,7 +59,7 @@ export function RelatorioSemanalAluno({ alunoId }: { alunoId: string }) {
   const [semanaInicio, setSemanaInicio] = useState(() => semanaPadraoRelatorioSemanal());
   const [copiado, setCopiado] = useState(false);
   const semanaAtual = useMemo(
-    () => somarDiasRelatorio(semanaPadraoRelatorioSemanal(), 7),
+    () => somarDias(semanaPadraoRelatorioSemanal(), 7),
     [],
   );
   const relatorio = useMemo(
@@ -160,7 +147,7 @@ export function RelatorioSemanalAluno({ alunoId }: { alunoId: string }) {
                 {relatorio.periodo.parcial ? "Semana em andamento" : "Semana concluída"}
               </p>
               <p className="font-display text-lg font-semibold">
-                {dataCurta(relatorio.periodo.inicio)} — {dataCurta(relatorio.periodo.fim)}
+                {fmtDiaMesCurto(relatorio.periodo.inicio)} — {fmtDiaMesCurto(relatorio.periodo.fim)}
               </p>
               <p className="mt-0.5 text-xs text-muted">Atualizado a partir dos registros atuais</p>
             </div>
@@ -168,7 +155,7 @@ export function RelatorioSemanalAluno({ alunoId }: { alunoId: string }) {
           <div className="flex items-center gap-1 self-start rounded-xl border border-line bg-bg/40 p-1">
             <button
               type="button"
-              onClick={() => setSemanaInicio((atual) => somarDiasRelatorio(atual, -7))}
+              onClick={() => setSemanaInicio((atual) => somarDias(atual, -7))}
               className="grid h-8 w-8 place-items-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-text"
               aria-label="Semana anterior"
             >
@@ -179,7 +166,7 @@ export function RelatorioSemanalAluno({ alunoId }: { alunoId: string }) {
             </span>
             <button
               type="button"
-              onClick={() => setSemanaInicio((atual) => somarDiasRelatorio(atual, 7))}
+              onClick={() => setSemanaInicio((atual) => somarDias(atual, 7))}
               disabled={semanaInicio >= semanaAtual}
               className="grid h-8 w-8 place-items-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-text disabled:cursor-not-allowed disabled:opacity-30"
               aria-label="Próxima semana"

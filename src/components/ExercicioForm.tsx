@@ -7,15 +7,9 @@ import { GRUPOS_MUSCULARES } from "@/lib/types";
 import { resumoDaExecucao } from "@/lib/historico-exercicios";
 import { Button, Field, Input, Select, Textarea } from "./ui";
 import { PlayIcon } from "./icons";
+import { fmtDiaMes } from "@/lib/data";
 
 export type ExercicioValues = Omit<Exercicio, "id">;
-
-function dataCurta(iso: string): string {
-  return new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-  });
-}
 
 export function ExercicioForm({
   initial,
@@ -175,7 +169,7 @@ export function ExercicioForm({
               <p className="mt-1 text-sm font-semibold">
                 {resumoUltimaExecucao.series}×{resumoUltimaExecucao.repeticoes}
                 {resumoUltimaExecucao.carga ? ` · ${resumoUltimaExecucao.carga}` : ""} ·{" "}
-                {dataCurta(ultimaExecucao.data)}
+                {fmtDiaMes(ultimaExecucao.data)}
               </p>
               {ultimaExecucao.divisaoNome && (
                 <p className="text-xs text-muted">{ultimaExecucao.divisaoNome}</p>

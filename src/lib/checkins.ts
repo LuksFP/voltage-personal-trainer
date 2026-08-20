@@ -1,4 +1,5 @@
 import type { CheckinSemanal } from "./types";
+import { paraIso } from "@/lib/data";
 
 const DATA_LOCAL = /^(\d{4})-(\d{2})-(\d{2})$/;
 
@@ -30,27 +31,20 @@ function comoDataLocal(valor: Date | string): Date {
   return data;
 }
 
-function dataLocalIso(data: Date): string {
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
-
 /** Retorna a segunda-feira da semana da data informada, no fuso local. */
 export function inicioDaSemana(data: Date | string = new Date()): string {
   const local = comoDataLocal(data);
   local.setHours(12, 0, 0, 0);
   const diasDesdeSegunda = (local.getDay() + 6) % 7;
   local.setDate(local.getDate() - diasDesdeSegunda);
-  return dataLocalIso(local);
+  return paraIso(local);
 }
 
 /** Retorna o domingo correspondente à semana iniciada na data informada. */
 export function fimDaSemana(semanaInicio: string): string {
   const inicioNormalizado = comoDataLocal(inicioDaSemana(semanaInicio));
   inicioNormalizado.setDate(inicioNormalizado.getDate() + 6);
-  return dataLocalIso(inicioNormalizado);
+  return paraIso(inicioNormalizado);
 }
 
 /**

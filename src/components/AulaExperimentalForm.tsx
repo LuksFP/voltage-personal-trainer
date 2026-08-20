@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button, Field, Input, Textarea } from "./ui";
+import { hojeIso } from "@/lib/data";
 
 export type AulaExperimentalFormValues = {
   data: string;
@@ -10,13 +11,6 @@ export type AulaExperimentalFormValues = {
 };
 
 type AulaExperimentalErros = Partial<Record<"data" | "hora", string>>;
-
-function hojeLocal(): string {
-  const agora = new Date();
-  const mes = String(agora.getMonth() + 1).padStart(2, "0");
-  const dia = String(agora.getDate()).padStart(2, "0");
-  return `${agora.getFullYear()}-${mes}-${dia}`;
-}
 
 export function AulaExperimentalForm({
   initial,
@@ -32,7 +26,7 @@ export function AulaExperimentalForm({
   submitting?: boolean;
 }) {
   const [values, setValues] = useState<AulaExperimentalFormValues>({
-    data: initial?.data ?? hojeLocal(),
+    data: initial?.data ?? hojeIso(),
     hora: initial?.hora ?? "",
     observacoes: initial?.observacoes ?? "",
   });
@@ -57,7 +51,7 @@ export function AulaExperimentalForm({
           <Input
             autoFocus
             type="date"
-            min={hojeLocal()}
+            min={hojeIso()}
             value={values.data}
             onChange={(event) => {
               setValues((current) => ({ ...current, data: event.target.value }));

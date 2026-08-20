@@ -5,6 +5,8 @@ import type {
   RegistroHabitosDiario,
   ValoresHabitosDiarios,
 } from "./types";
+import { paraIso } from "./data";
+import { somarDias } from "./data";
 
 export const HABITOS_DIARIOS = [
   "agua",
@@ -93,11 +95,7 @@ function normalizarHabitosAtivos(habitos: readonly HabitoDiario[]): HabitoDiario
 
 /** Retorna a data civil local sem passar por UTC ou `toISOString()`. */
 export function dataLocalHoje(referencia: Date = new Date()): string {
-  if (Number.isNaN(referencia.getTime())) throw new Error("A data de referência é inválida.");
-  const ano = referencia.getFullYear();
-  const mes = String(referencia.getMonth() + 1).padStart(2, "0");
-  const dia = String(referencia.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
+  return paraIso(referencia);
 }
 
 /** Valida uma data civil estrita e devolve a própria chave YYYY-MM-DD. */
@@ -123,13 +121,6 @@ function timestampDataLocal(data: string): number {
   const partes = DATA_LOCAL.exec(data);
   if (!partes) throw new Error("A data informada é inválida.");
   return Date.UTC(Number(partes[1]), Number(partes[2]) - 1, Number(partes[3]));
-}
-
-function somarDiasLocais(data: string, dias: number): string {
-  if (!Number.isInteger(dias)) throw new Error("A quantidade de dias deve ser inteira.");
-  const resultado = new Date(timestampDataLocal(data));
-  resultado.setUTCDate(resultado.getUTCDate() + dias);
-  return resultado.toISOString().slice(0, 10);
 }
 
 function diferencaDias(primeira: string, segunda: string): number {
@@ -329,11 +320,11 @@ function calcularSequencia(datasConcluidas: ReadonlySet<string>, hoje: string): 
 
   // O dia ainda em andamento não quebra a sequência: se hoje não foi concluído,
   // a contagem atual pode terminar ontem.
-  let cursor = datasConcluidas.has(hoje) ? hoje : somarDiasLocais(hoje, -1);
+  let cursor = datasConcluidas.has(hoje) ? hoje : somarDias(hoje, -1);
   let atual = 0;
   while (datasConcluidas.has(cursor)) {
     atual += 1;
-    cursor = somarDiasLocais(cursor, -1);
+    cursor = somarDias(cursor, -1);
   }
 
   return { atual, melhor };

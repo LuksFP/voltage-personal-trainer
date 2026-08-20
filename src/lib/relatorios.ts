@@ -1,4 +1,5 @@
 import type { StoreData } from "./store";
+import { paraCompetencia, paraIso } from "@/lib/data";
 
 type DadosRelatorio = Pick<
   StoreData,
@@ -15,20 +16,13 @@ export const PERIODOS: { valor: Periodo; label: string }[] = [
   { valor: "tudo", label: "Tudo" },
 ];
 
-function isoLocal(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
 // Data ISO (YYYY-MM-DD) de corte do período, ou null para "tudo".
 function desdeIso(periodo: Periodo, hoje: Date): string | null {
   if (periodo === "tudo") return null;
   const dias = periodo === "30d" ? 30 : periodo === "90d" ? 90 : 365;
   const d = new Date(hoje);
   d.setDate(d.getDate() - (dias - 1));
-  return isoLocal(d);
+  return paraIso(d);
 }
 
 // Normaliza qualquer ISO (com ou sem hora) para só o dia, para comparar como string.
@@ -98,7 +92,7 @@ function serieUltimosMeses(data: DadosRelatorio, hoje: Date, n: number): PontoMe
   const meses: PontoMes[] = [];
   for (let i = n - 1; i >= 0; i--) {
     const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
-    const chave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const chave = paraCompetencia(d);
     const label = d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
     let realizadas = 0;
     let faltas = 0;
@@ -170,7 +164,7 @@ export function calcularRelatorio(
   const receitaMensal: PontoReceita[] = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
-    const chave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const chave = paraCompetencia(d);
     const label = d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
     const value = data.pagamentos
       .filter((p) => p.status === "pago" && p.pagoEm && dia(p.pagoEm).startsWith(chave))

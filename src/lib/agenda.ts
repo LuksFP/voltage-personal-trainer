@@ -1,6 +1,6 @@
 import type { Sessao, StatusSessao } from "./types";
+import { dataUtc, somarDias } from "./data";
 
-const DATA_ISO = /^(\d{4})-(\d{2})-(\d{2})$/;
 const HORA_24H = /^(\d{2}):(\d{2})$/;
 export const DURACAO_PADRAO_SESSAO_MIN = 60;
 
@@ -15,28 +15,6 @@ export interface ConflitoAgenda<
 > {
   candidata: Candidata;
   existente: Existente;
-}
-
-function dataUtc(dataIso: string): Date {
-  const partes = DATA_ISO.exec(dataIso);
-  if (!partes) throw new Error("Use uma data no formato YYYY-MM-DD.");
-
-  const ano = Number(partes[1]);
-  const mes = Number(partes[2]);
-  const dia = Number(partes[3]);
-  const data = new Date(Date.UTC(ano, mes - 1, dia));
-  if (
-    data.getUTCFullYear() !== ano ||
-    data.getUTCMonth() !== mes - 1 ||
-    data.getUTCDate() !== dia
-  ) {
-    throw new Error("A data informada é inválida.");
-  }
-  return data;
-}
-
-function dataUtcIso(data: Date): string {
-  return data.toISOString().slice(0, 10);
 }
 
 function minutosDaHora(hora: string): number {
@@ -60,14 +38,6 @@ function inicioAbsolutoEmMinutos(sessao: SessaoComparavel): number {
   return dataUtc(sessao.data).getTime() / 60_000 + minutosDaHora(sessao.hora);
 }
 
-/** Soma dias de calendário sem converter a data para o fuso UTC/local do navegador. */
-export function somarDiasIso(data: string, dias: number): string {
-  if (!Number.isInteger(dias)) throw new Error("A quantidade de dias deve ser inteira.");
-  const resultado = dataUtc(data);
-  resultado.setUTCDate(resultado.getUTCDate() + dias);
-  return dataUtcIso(resultado);
-}
-
 /** Gera ocorrências semanais, incluindo a data inicial, com limite de 52 sessões. */
 export function gerarDatasRecorrentes(data: string, quantidade: number): string[] {
   if (!Number.isInteger(quantidade) || quantidade < 1 || quantidade > 52) {
@@ -75,7 +45,7 @@ export function gerarDatasRecorrentes(data: string, quantidade: number): string[
   }
   // Valida a data mesmo quando houver apenas uma ocorrência.
   dataUtc(data);
-  return Array.from({ length: quantidade }, (_, indice) => somarDiasIso(data, indice * 7));
+  return Array.from({ length: quantidade }, (_, indice) => somarDias(data, indice * 7));
 }
 
 /**

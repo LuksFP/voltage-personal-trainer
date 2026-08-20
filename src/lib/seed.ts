@@ -12,6 +12,7 @@ import type {
   Treino,
 } from "./types";
 import { competenciaAtual, deslocarCompetencia, vencimentoDe } from "./pagamentos";
+import { paraIso } from "@/lib/data";
 
 export const alunosSeed: Aluno[] = [
   {
@@ -144,14 +145,6 @@ export const avaliacoesSeed: Avaliacao[] = [
   },
 ];
 
-// Data local (YYYY-MM-DD) — evita deslocamento de fuso do toISOString.
-function isoLocal(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
 /**
  * Sessões de exemplo ancoradas na segunda-feira da semana atual,
  * para a agenda já mostrar dados relevantes em qualquer data.
@@ -165,7 +158,7 @@ export function sessoesSeed(): Sessao[] {
   const dia = (n: number) => {
     const d = new Date(segunda);
     d.setDate(segunda.getDate() + n);
-    return isoLocal(d);
+    return paraIso(d);
   };
   const criadoEm = new Date().toISOString();
 
@@ -200,7 +193,7 @@ export function historicoExerciciosSeed(): HistoricoExercicio[] {
   const diffSegunda = (hoje.getDay() + 6) % 7;
   const segunda = new Date(hoje);
   segunda.setDate(hoje.getDate() - diffSegunda);
-  const data = isoLocal(segunda);
+  const data = paraIso(segunda);
   const criadoEm = new Date().toISOString();
 
   return [

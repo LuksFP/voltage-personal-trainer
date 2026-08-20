@@ -16,16 +16,7 @@ import {
   ShieldCheckIcon,
 } from "./icons";
 import { Badge, Button, Card, Textarea, cx } from "./ui";
-
-function dataHora(dataIso: string): string {
-  return new Date(dataIso).toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import { fmtDataHoraAno } from "@/lib/data";
 
 export function AnamneseAluno({ alunoId }: { alunoId: string }) {
   const { anamneseDoAluno, revisarAnamnese, reabrirAnamnese } = useStore();
@@ -159,15 +150,15 @@ function DetalhesAnamnese({
                 : "Sem ponto de atenção declarado"}
             </p>
             <p className="mt-1 text-xs text-muted">
-              Atualizada em {dataHora(anamnese.atualizadoEm)}
-              {anamnese.enviadoEm ? ` · enviada em ${dataHora(anamnese.enviadoEm)}` : ""}
+              Atualizada em {fmtDataHoraAno(anamnese.atualizadoEm)}
+              {anamnese.enviadoEm ? ` · enviada em ${fmtDataHoraAno(anamnese.enviadoEm)}` : ""}
             </p>
           </div>
         </div>
         <div className="border-t border-line px-4 py-3 sm:border-l sm:border-t-0 sm:px-5">
           <p className="text-[10px] font-bold uppercase tracking-wide text-muted">Assinatura</p>
           <p className="mt-1 text-sm font-semibold">{anamnese.assinaturaNome || "Não assinada"}</p>
-          {anamnese.assinadoEm && <p className="mt-0.5 text-[10px] text-muted">{dataHora(anamnese.assinadoEm)}</p>}
+          {anamnese.assinadoEm && <p className="mt-0.5 text-[10px] text-muted">{fmtDataHoraAno(anamnese.assinadoEm)}</p>}
         </div>
       </div>
 
@@ -287,7 +278,7 @@ function DetalhesAnamnese({
                 <CheckIcon className="h-4 w-4" /> Revisão concluída
               </p>
               {anamnese.revisadoEm && (
-                <p className="mt-1 text-xs text-muted">Em {dataHora(anamnese.revisadoEm)}</p>
+                <p className="mt-1 text-xs text-muted">Em {fmtDataHoraAno(anamnese.revisadoEm)}</p>
               )}
               {anamnese.observacaoPersonal && (
                 <p className="mt-3 text-sm leading-relaxed text-muted">

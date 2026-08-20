@@ -17,20 +17,12 @@ import {
   TrophyIcon,
 } from "./icons";
 import { Button, Card, cx } from "./ui";
+import { fmtDiaMesAno } from "@/lib/data";
 
 function numero(valor: number, casas = 0): string {
   return valor.toLocaleString("pt-BR", {
     minimumFractionDigits: casas,
     maximumFractionDigits: casas,
-  });
-}
-
-function dataCurta(valor: string): string {
-  const normalizada = valor.length === 10 ? `${valor}T12:00:00` : valor;
-  return new Date(normalizada).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
   });
 }
 
@@ -180,7 +172,7 @@ function MarcaPessoal({ recorde }: { recorde: RecordePessoalExercicio }) {
         {numero(recorde.e1rmKg, 1)} kg
       </p>
       <p className="mt-1 text-xs text-muted">
-        {numero(recorde.cargaKg, 1)} kg × {recorde.repeticoes} · {dataCurta(recorde.data)}
+        {numero(recorde.cargaKg, 1)} kg × {recorde.repeticoes} · {fmtDiaMesAno(recorde.data)}
       </p>
     </div>
   );
@@ -229,7 +221,7 @@ export function MedalhaCard({
       </div>
       {medalha.desbloqueada ? (
         medalha.desbloqueadaEm && (
-          <p className="mt-3 text-[11px] text-muted">Alcançada em {dataCurta(medalha.desbloqueadaEm)}</p>
+          <p className="mt-3 text-[11px] text-muted">Alcançada em {fmtDiaMesAno(medalha.desbloqueadaEm)}</p>
         )
       ) : (
         <div className="mt-3">

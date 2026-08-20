@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { Button, Card, Field, Input } from "@/components/ui";
 import { CheckIcon, TargetIcon } from "@/components/icons";
+import { hojeIso } from "@/lib/data";
 
 /* Faixas largas de propósito: é filtro contra dedo errado (7 kg, 700 kg),
    não julgamento sobre o corpo de ninguém. */
@@ -29,13 +30,6 @@ function numero(texto: string): number | null {
   if (!limpo) return null;
   const valor = Number(limpo);
   return Number.isFinite(valor) ? valor : null;
-}
-
-function hojeLocal(): string {
-  const agora = new Date();
-  const mes = String(agora.getMonth() + 1).padStart(2, "0");
-  const dia = String(agora.getDate()).padStart(2, "0");
-  return `${agora.getFullYear()}-${mes}-${dia}`;
 }
 
 /**
@@ -96,7 +90,7 @@ export function RegistrarMedidas({ alunoId }: { alunoId: string }) {
       updateAluno(alunoId, { pesoMeta });
     }
 
-    addAvaliacao(alunoId, { data: hojeLocal(), ...registro });
+    addAvaliacao(alunoId, { data: hojeIso(), ...registro });
     setValores({ peso: "", percentualGordura: "", cintura: "", braco: "", coxa: "" });
     setAberto(false);
     setExtras(false);

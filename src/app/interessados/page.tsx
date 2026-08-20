@@ -32,6 +32,8 @@ import type {
   StatusInteressado,
 } from "@/lib/types";
 import { parseDiaVencimento, parseMensalidade, parsePesoMeta } from "../alunos/page";
+import { hojeIso } from "@/lib/data";
+import { somarDias } from "@/lib/data";
 
 type Visao = "pipeline" | "historico";
 type ColunaPipeline = "novos" | "conversa" | "experimental" | "proposta";
@@ -83,23 +85,6 @@ const COLUNAS: {
   },
   { id: "proposta", titulo: "Proposta", descricao: "Decisão e matrícula", statuses: ["proposta"] },
 ];
-
-function hojeLocal(): string {
-  const data = new Date();
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
-
-function somarDias(dataIso: string, dias: number): string {
-  const data = new Date(`${dataIso}T12:00:00`);
-  data.setDate(data.getDate() + dias);
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
 
 function dataBr(dataIso: string): string {
   return new Date(`${dataIso}T12:00:00`).toLocaleDateString("pt-BR", {
@@ -162,7 +147,7 @@ export default function InteressadosPage() {
     getAluno,
   } = useStore();
   const { personal } = useAuth();
-  const hoje = hojeLocal();
+  const hoje = hojeIso();
   const [visao, setVisao] = useState<Visao>("pipeline");
   const [colunaMobile, setColunaMobile] = useState<ColunaPipeline>("novos");
   const [busca, setBusca] = useState("");

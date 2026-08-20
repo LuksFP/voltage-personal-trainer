@@ -9,6 +9,7 @@ import type {
   StatusAulaExperimental,
   StatusInteressado,
 } from "./types";
+import { paraIso } from "@/lib/data";
 
 export const ORIGENS_INTERESSADO = [
   "instagram",
@@ -758,17 +759,10 @@ export function converterInteressadoParaAluno(
   return { aluno, interessado: convertido, adotado: adotado !== undefined };
 }
 
-function dataLocal(reference: Date): string {
-  const ano = reference.getFullYear();
-  const mes = String(reference.getMonth() + 1).padStart(2, "0");
-  const dia = String(reference.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
-
 function resolverHoje(hoje: Date | string): string {
   return typeof hoje === "string"
     ? validarDataInteressado(hoje, "a data de referência")
-    : dataLocal(hoje);
+    : paraIso(hoje);
 }
 
 export function situacaoFollowUp(

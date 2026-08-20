@@ -2,15 +2,11 @@
 
 import { useState } from "react";
 import { useStore, type EscopoRecorrenciaSessao } from "@/lib/store";
-import {
-  conflitosEntreCandidatosEExistentes,
-  gerarDatasRecorrentes,
-  somarDiasIso,
-  type SessaoComparavel,
-} from "@/lib/agenda";
+import { conflitosEntreCandidatosEExistentes, gerarDatasRecorrentes, type SessaoComparavel } from "@/lib/agenda";
 import type { Sessao } from "@/lib/types";
 import { resumoDoPacote } from "@/lib/pacotes";
 import { Button, Field, Input, Select } from "./ui";
+import { somarDias } from "@/lib/data";
 
 export type SessaoFormPayload = {
   alunoId: string;
@@ -87,7 +83,7 @@ export function SessaoForm({
       const deslocamento = diferencaDias(initial.data, data);
       candidatas = relacionadas.map((sessao) => ({
         id: sessao.id,
-        data: sessao.id === initial.id ? data : somarDiasIso(sessao.data, deslocamento),
+        data: sessao.id === initial.id ? data : somarDias(sessao.data, deslocamento),
         hora,
         duracaoMin: duracao.trim() === "" ? undefined : dur,
         status: sessao.status,

@@ -3,15 +3,9 @@
 import type { PlanoAlimentar } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { cx } from "./ui";
+import { paraIso } from "@/lib/data";
 
 const DIA_CURTO = ["D", "S", "T", "Q", "Q", "S", "S"];
-
-function isoLocal(d: Date): string {
-  const ano = d.getFullYear();
-  const mes = String(d.getMonth() + 1).padStart(2, "0");
-  const dia = String(d.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
 
 // Resumo de adesão às refeições dos últimos 7 dias, para o personal acompanhar.
 export function AdesaoRefeicoes({
@@ -32,7 +26,7 @@ export function AdesaoRefeicoes({
   const dias = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(hoje);
     d.setDate(hoje.getDate() - (6 - i));
-    const iso = isoLocal(d);
+    const iso = paraIso(d);
     const registro = porData.get(iso);
     const feitas = registro
       ? plano.refeicoes.filter((r) => registro.refeicoesFeitas.includes(r.id)).length

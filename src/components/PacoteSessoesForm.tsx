@@ -4,18 +4,12 @@ import { useState } from "react";
 import type { PacoteSessoes } from "@/lib/types";
 import type { PacoteSessoesInput } from "@/lib/store";
 import { Button, Field, Input, Textarea } from "./ui";
-
-function isoLocal(data: Date): string {
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
+import { paraIso } from "@/lib/data";
 
 function validadePadrao(): string {
   const data = new Date();
   data.setDate(data.getDate() + 90);
-  return isoLocal(data);
+  return paraIso(data);
 }
 
 export function PacoteSessoesForm({
@@ -34,7 +28,7 @@ export function PacoteSessoesForm({
   const [usoAnterior, setUsoAnterior] = useState(
     String(initial?.utilizadasAntesDoVoltage ?? 0),
   );
-  const [dataInicio, setDataInicio] = useState(initial?.dataInicio ?? isoLocal(new Date()));
+  const [dataInicio, setDataInicio] = useState(initial?.dataInicio ?? paraIso(new Date()));
   const [dataValidade, setDataValidade] = useState(
     initial?.dataValidade ?? validadePadrao(),
   );

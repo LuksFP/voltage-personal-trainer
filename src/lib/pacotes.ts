@@ -1,4 +1,5 @@
 import type { PacoteSessoes, Sessao } from "./types";
+import { dataUtc, paraIso } from "@/lib/data";
 
 export type StatusPacoteSessoes = "ativo" | "esgotado" | "expirado" | "encerrado";
 
@@ -13,31 +14,6 @@ export interface ResumoPacoteSessoes {
   diasParaValidade: number;
 }
 
-const DATA_ISO = /^(\d{4})-(\d{2})-(\d{2})$/;
-
-function dataUtc(dataIso: string): Date {
-  const partes = DATA_ISO.exec(dataIso);
-  if (!partes) throw new Error("Use uma data no formato YYYY-MM-DD.");
-  const ano = Number(partes[1]);
-  const mes = Number(partes[2]);
-  const dia = Number(partes[3]);
-  const data = new Date(Date.UTC(ano, mes - 1, dia));
-  if (
-    data.getUTCFullYear() !== ano ||
-    data.getUTCMonth() !== mes - 1 ||
-    data.getUTCDate() !== dia
-  ) {
-    throw new Error("A data informada é inválida.");
-  }
-  return data;
-}
-
-function dataLocalIso(data: Date): string {
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
 
 function normalizarHoje(hoje: Date | string | undefined): string {
   if (typeof hoje === "string") {
@@ -46,7 +22,7 @@ function normalizarHoje(hoje: Date | string | undefined): string {
   }
   const data = hoje ? new Date(hoje.getTime()) : new Date();
   if (Number.isNaN(data.getTime())) throw new Error("A data de referência é inválida.");
-  return dataLocalIso(data);
+  return paraIso(data);
 }
 
 function diferencaDias(inicio: string, fim: string): number {

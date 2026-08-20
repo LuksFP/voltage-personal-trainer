@@ -1,4 +1,4 @@
-import { somarDiasIso } from "./agenda";
+
 import { inicioDaSemana } from "./checkins";
 import type {
   Aluno,
@@ -10,6 +10,8 @@ import type {
   Sessao,
   TipoLembreteWhatsApp,
 } from "./types";
+import { paraIso } from "@/lib/data";
+import { somarDias } from "./data";
 
 const JANELA_COBRANCA_ANTECEDENCIA_DIAS = 3;
 const JANELA_RENOVACAO_ANTECEDENCIA_DIAS = 14;
@@ -64,24 +66,17 @@ function dataIsoValida(valor: string): string | null {
   return dataIso;
 }
 
-function dataLocalIso(data: Date): string {
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
-
 function normalizarHoje(hoje: Date | string | undefined): string {
   if (typeof hoje === "string") {
     const exata = dataIsoValida(hoje);
     if (exata && hoje.length === 10) return exata;
     const data = new Date(hoje);
     if (Number.isNaN(data.getTime())) throw new Error("A data de referência é inválida.");
-    return dataLocalIso(data);
+    return paraIso(data);
   }
   const data = hoje ? new Date(hoje.getTime()) : new Date();
   if (Number.isNaN(data.getTime())) throw new Error("A data de referência é inválida.");
-  return dataLocalIso(data);
+  return paraIso(data);
 }
 
 function diferencaEmDias(inicio: string, fim: string): number | null {
@@ -118,7 +113,7 @@ function candidatosDeTreino(
   sessoes: readonly Sessao[],
   hoje: string,
 ): CandidatoLembreteWhatsApp[] {
-  const amanha = somarDiasIso(hoje, 1);
+  const amanha = somarDias(hoje, 1);
   return sessoes.flatMap((sessao) => {
     const aluno = alunos.get(sessao.alunoId);
     if (

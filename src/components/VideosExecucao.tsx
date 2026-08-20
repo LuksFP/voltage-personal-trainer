@@ -6,15 +6,7 @@ import type { VideoExecucao } from "@/lib/types";
 import { carregarVideoLocal, removerVideoLocal } from "@/lib/video-storage";
 import { Badge, Button, Card, Textarea } from "./ui";
 import { CheckIcon, TrashIcon, VideoIcon } from "./icons";
-
-function dataHora(iso: string): string {
-  return new Date(iso).toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import { fmtDataHora } from "@/lib/data";
 
 function tamanho(bytes: number): string {
   return `${(bytes / 1024 / 1024).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} MB`;
@@ -107,7 +99,7 @@ function VideoRevisaoCard({ video }: { video: VideoExecucao }) {
           <div className="min-w-0">
             <p className="truncate font-semibold">{video.exercicioNomeSnapshot}</p>
             <p className="mt-0.5 text-xs text-muted">
-              {dataHora(video.criadoEm)} · {tamanho(video.tamanhoBytes)}
+              {fmtDataHora(video.criadoEm)} · {tamanho(video.tamanhoBytes)}
             </p>
           </div>
           <button

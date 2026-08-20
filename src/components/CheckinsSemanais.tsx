@@ -6,22 +6,7 @@ import { useStore } from "@/lib/store";
 import type { CheckinSemanal, EscalaTreino } from "@/lib/types";
 import { CheckIcon, PencilIcon } from "./icons";
 import { Badge, Button, Card, Textarea, cx } from "./ui";
-
-function dataCurta(iso: string): string {
-  return new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-  });
-}
-
-function dataHora(iso: string): string {
-  return new Date(iso).toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import { fmtDataHora, fmtDiaMesCurto } from "@/lib/data";
 
 export function CheckinsSemanais({ alunoId }: { alunoId: string }) {
   const { checkinsDoAluno, revisarCheckinSemanal } = useStore();
@@ -83,10 +68,10 @@ export function CheckinsSemanais({ alunoId }: { alunoId: string }) {
                 <div className="flex flex-col gap-3 border-b border-line bg-surface-2/35 p-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <p className="font-display font-semibold">
-                      {dataCurta(checkin.semanaInicio)} a {dataCurta(fimDaSemana(checkin.semanaInicio))}
+                      {fmtDiaMesCurto(checkin.semanaInicio)} a {fmtDiaMesCurto(fimDaSemana(checkin.semanaInicio))}
                     </p>
                     <p className="mt-0.5 text-xs text-muted">
-                      Respondido em {dataHora(checkin.respondidoEm)}
+                      Respondido em {fmtDataHora(checkin.respondidoEm)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

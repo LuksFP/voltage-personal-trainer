@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useStore } from "@/lib/store";
 import type { Aluno, TipoLembreteWhatsApp } from "@/lib/types";
 import { Button, Field, Input, Select, Textarea } from "./ui";
+import { hojeIso } from "@/lib/data";
 
 const TIPOS: { value: TipoLembreteWhatsApp; label: string }[] = [
   { value: "treino", label: "Treino" },
@@ -44,13 +45,6 @@ function modelo(tipo: TipoLembreteWhatsApp, aluno?: Aluno): { titulo: string; me
     titulo: "Renovação de planilha",
     mensagem: `${saudacao} Seu programa está chegando ao fim. Vamos alinhar a próxima fase e renovar sua planilha?`,
   };
-}
-
-function hojeIso(): string {
-  const agora = new Date();
-  const mes = String(agora.getMonth() + 1).padStart(2, "0");
-  const dia = String(agora.getDate()).padStart(2, "0");
-  return `${agora.getFullYear()}-${mes}-${dia}`;
 }
 
 export function LembreteWhatsAppForm({

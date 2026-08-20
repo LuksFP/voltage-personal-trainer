@@ -20,6 +20,7 @@ import {
   TrophyIcon,
 } from "./icons";
 import { Badge, Button, Card, cx } from "./ui";
+import { hojeIso } from "@/lib/data";
 
 const ROTULOS_MEDIDA: Record<MedidaCorporalMeta, string> = {
   percentualGordura: "% de gordura",
@@ -29,14 +30,6 @@ const ROTULOS_MEDIDA: Record<MedidaCorporalMeta, string> = {
   braco: "braço",
   coxa: "coxa",
 };
-
-function hojeLocal(): string {
-  const data = new Date();
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
 
 function inputDaMeta(values: MetaAlunoFormValues): CriarMetaAlunoInput {
   const base = {
@@ -137,7 +130,7 @@ export function MetasAluno({ alunoId }: { alunoId: string }) {
   const [editando, setEditando] = useState<MetaAluno | null>(null);
   const [historicoAberto, setHistoricoAberto] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-  const referencia = hojeLocal();
+  const referencia = hojeIso();
 
   const progressos = new Map(
     metas.map((meta) => [

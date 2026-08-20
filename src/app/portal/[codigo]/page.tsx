@@ -30,6 +30,7 @@ import {
   GridIcon,
   TargetIcon,
 } from "@/components/icons";
+import { paraIso } from "@/lib/data";
 
 type AbaPortal = "inicio" | "treino" | "evolucao" | "historico";
 
@@ -39,13 +40,6 @@ const ABAS: { id: AbaPortal; label: string; icon: typeof GridIcon }[] = [
   { id: "evolucao", label: "Evolução", icon: ChartIcon },
   { id: "historico", label: "Histórico", icon: CalendarIcon },
 ];
-
-function isoLocal(data: Date): string {
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
 
 function dataExtenso(iso: string): string {
   return new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR", {
@@ -59,7 +53,7 @@ export default function PortalPage() {
   const params = useParams<{ codigo: string }>();
   const { getAluno, treinosDoAluno, sessoes, pacotesDoAluno, metasDoAluno } = useStore();
   const aluno = getAluno(params.codigo);
-  const hoje = isoLocal(new Date());
+  const hoje = paraIso(new Date());
   const [aba, setAba] = useState<AbaPortal>("inicio");
 
   const treinoAtivo = useMemo<Treino | undefined>(() => {

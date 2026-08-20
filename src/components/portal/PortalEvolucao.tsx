@@ -6,6 +6,7 @@ import { analisarExercicios } from "@/lib/progressao";
 import { LineChart, type ChartPoint } from "@/components/LineChart";
 import { Card, cx } from "@/components/ui";
 import { ChartIcon, TargetIcon, TrendUpIcon } from "@/components/icons";
+import { fmtDiaMesCurto } from "@/lib/data";
 
 const MEDIDAS = [
   { key: "peso", label: "Peso", unit: " kg" },
@@ -16,13 +17,6 @@ const MEDIDAS = [
 ] as const;
 
 type Medida = (typeof MEDIDAS)[number]["key"];
-
-function dataCurta(iso: string): string {
-  return new Date(`${iso}T12:00:00`).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-  });
-}
 
 function numero(valor: number, casas = 1): string {
   return valor.toLocaleString("pt-BR", { maximumFractionDigits: casas });
@@ -48,7 +42,7 @@ export function PortalEvolucao({
     ? avaliacoes
         .filter((avaliacao) => avaliacao[ativa.key] !== undefined)
         .map((avaliacao) => ({
-          label: dataCurta(avaliacao.data),
+          label: fmtDiaMesCurto(avaliacao.data),
           value: avaliacao[ativa.key] as number,
         }))
     : [];

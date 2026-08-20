@@ -1,4 +1,5 @@
 import type { Pagamento } from "./types";
+import { paraCompetencia, paraIso } from "@/lib/data";
 
 // Status mostrado ao personal: "pago" | "pendente" (ainda no prazo) | "atrasado" (venceu sem pagar).
 export type StatusEfetivo = "pago" | "pendente" | "atrasado";
@@ -12,16 +13,9 @@ export function formatBRL(n: number): string {
   return nf.format(n);
 }
 
-function iso(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
 // "2026-07"
 export function competencia(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  return paraCompetencia(d);
 }
 
 export function competenciaAtual(): string {
@@ -54,10 +48,10 @@ export function labelCurto(comp: string): string {
 export function vencimentoDe(comp: string, diaVencimento: number): string {
   const [y, m] = comp.split("-").map(Number);
   const dia = Math.min(Math.max(diaVencimento || 1, 1), 28);
-  return iso(new Date(y, m - 1, dia));
+  return paraIso(new Date(y, m - 1, dia));
 }
 
 export function statusEfetivo(p: Pagamento, hoje: Date = new Date()): StatusEfetivo {
   if (p.status === "pago") return "pago";
-  return p.vencimento < iso(hoje) ? "atrasado" : "pendente";
+  return p.vencimento < paraIso(hoje) ? "atrasado" : "pendente";
 }

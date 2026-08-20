@@ -1,5 +1,6 @@
 import type { Aluno, HistoricoExercicio, NivelDor, Sessao, Treino } from "./types";
 import { cargaReferenciaKg } from "./historico-exercicios";
+import { aoMeioDia, fmtDiaMes, paraIso } from "@/lib/data";
 
 export type TipoAlertaPersonal =
   | "sem-treino"
@@ -50,29 +51,11 @@ interface ComparacaoCarga {
 
 const DORES_RELEVANTES = new Set<NivelDor>(["Moderada", "Forte"]);
 
-function isoLocal(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function dataLocal(iso: string): Date {
-  return new Date(`${iso.slice(0, 10)}T12:00:00`);
-}
-
 function diasDesde(iso: string, hoje: Date): number {
   const msDia = 24 * 60 * 60 * 1000;
-  const base = dataLocal(iso).getTime();
-  const ref = dataLocal(isoLocal(hoje)).getTime();
+  const base = aoMeioDia(iso).getTime();
+  const ref = aoMeioDia(paraIso(hoje)).getTime();
   return Math.max(0, Math.floor((ref - base) / msDia));
-}
-
-function dataCurta(iso: string): string {
-  return dataLocal(iso).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-  });
 }
 
 function normalizarNome(nome: string): string {
@@ -160,7 +143,7 @@ function comparacoesDeCarga(
 function cortePorDias(hoje: Date, dias: number): string {
   const d = new Date(hoje);
   d.setDate(hoje.getDate() - dias);
-  return isoLocal(d);
+  return paraIso(d);
 }
 
 export function calcularAlertasPersonal(
@@ -211,7 +194,7 @@ export function calcularAlertasPersonal(
         tipo: "feedback-ruim",
         alunoId: aluno.id,
         nome: aluno.nome,
-        detalhe: `Dif. ${sessaoRuim.feedback.dificuldade}/5 · energia ${sessaoRuim.feedback.energia}/5 em ${dataCurta(sessaoRuim.data)}`,
+        detalhe: `Dif. ${sessaoRuim.feedback.dificuldade}/5 · energia ${sessaoRuim.feedback.energia}/5 em ${fmtDiaMes(sessaoRuim.data)}`,
         prioridade: "media",
         data: sessaoRuim.data,
       });
@@ -223,7 +206,7 @@ export function calcularAlertasPersonal(
         tipo: "dor",
         alunoId: aluno.id,
         nome: aluno.nome,
-        detalhe: `${sessaoDor.feedback.dor} em ${dataCurta(sessaoDor.data)}${sessaoDor.foco ? ` · ${sessaoDor.foco}` : ""}`,
+        detalhe: `${sessaoDor.feedback.dor} em ${fmtDiaMes(sessaoDor.data)}${sessaoDor.foco ? ` · ${sessaoDor.foco}` : ""}`,
         prioridade: sessaoDor.feedback.dor === "Forte" ? "alta" : "media",
         data: sessaoDor.data,
       });

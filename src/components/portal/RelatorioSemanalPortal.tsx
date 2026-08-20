@@ -15,13 +15,7 @@ import {
   TrophyIcon,
 } from "@/components/icons";
 import { cx } from "@/components/ui";
-
-function dataCurta(dataIso: string): string {
-  return new Date(`${dataIso}T12:00:00`).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-  });
-}
+import { fmtDiaMesCurto } from "@/lib/data";
 
 function formatarNumero(valor: number, casas = 0): string {
   return valor.toLocaleString("pt-BR", {
@@ -88,7 +82,7 @@ export function RelatorioSemanalPortal({ alunoId }: { alunoId: string }) {
               )}
             </span>
             <span className="mt-0.5 block text-xs text-muted">
-              {dataCurta(relatorio.periodo.inicio)} a {dataCurta(relatorio.periodo.fim)} · atualizado
+              {fmtDiaMesCurto(relatorio.periodo.inicio)} a {fmtDiaMesCurto(relatorio.periodo.fim)} · atualizado
               automaticamente
             </span>
           </span>

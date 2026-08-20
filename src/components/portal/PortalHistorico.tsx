@@ -4,15 +4,7 @@ import { useStore } from "@/lib/store";
 import { resumoDaExecucao, volumeExato } from "@/lib/historico-exercicios";
 import { Card } from "@/components/ui";
 import { CalendarIcon, CheckIcon, ClockIcon, DumbbellIcon } from "@/components/icons";
-
-function subtrairDias(iso: string, dias: number): string {
-  const data = new Date(`${iso}T12:00:00`);
-  data.setDate(data.getDate() - dias);
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
+import { somarDias } from "@/lib/data";
 
 function dataCompleta(iso: string): string {
   return new Date(`${iso}T12:00:00`).toLocaleDateString("pt-BR", {
@@ -28,11 +20,11 @@ export function PortalHistorico({ alunoId, hoje }: { alunoId: string; hoje: stri
   const realizadas = sessoes
     .filter((sessao) => sessao.alunoId === alunoId && sessao.status === "realizada")
     .sort((a, b) => b.data.localeCompare(a.data) || b.hora.localeCompare(a.hora));
-  const ultimos30 = realizadas.filter((sessao) => sessao.data >= subtrairDias(hoje, 29));
+  const ultimos30 = realizadas.filter((sessao) => sessao.data >= somarDias(hoje, -(29)));
   const minutos = ultimos30.reduce((total, sessao) => total + (sessao.duracaoMin ?? 0), 0);
   const registros = historicoExercicios.filter((registro) => registro.alunoId === alunoId);
   const volume30 = registros
-    .filter((registro) => registro.data >= subtrairDias(hoje, 29))
+    .filter((registro) => registro.data >= somarDias(hoje, -(29)))
     .reduce((total, registro) => total + (volumeExato(registro) ?? 0), 0);
 
   return (

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { ExercicioBiblioteca, MedidaCorporalMeta, MetaAluno } from "@/lib/types";
 import { Button, Field, Input, Select } from "./ui";
+import { paraIso } from "@/lib/data";
 
 export type TipoMetaFormulario = MetaAluno["tipo"];
 
@@ -18,17 +19,10 @@ export interface MetaAlunoFormValues {
   bibliotecaId?: string;
 }
 
-function dataLocal(data: Date): string {
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
-
 function prazoPadrao(): string {
   const data = new Date();
   data.setDate(data.getDate() + 84);
-  return dataLocal(data);
+  return paraIso(data);
 }
 
 function inicialDaMeta(meta?: MetaAluno): MetaAlunoFormValues {
@@ -49,7 +43,7 @@ function inicialDaMeta(meta?: MetaAluno): MetaAlunoFormValues {
   return {
     tipo: "peso",
     titulo: "Meta de peso",
-    dataInicio: dataLocal(new Date()),
+    dataInicio: paraIso(new Date()),
     prazo: prazoPadrao(),
     valorInicial: 80,
     valorAlvo: 75,

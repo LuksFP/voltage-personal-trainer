@@ -6,16 +6,10 @@ import { useStore } from "@/lib/store";
 import type { EscalaTreino, NivelDor } from "@/lib/types";
 import { CheckIcon, ChevronRightIcon } from "@/components/icons";
 import { Input, Select, Textarea, cx } from "@/components/ui";
+import { fmtDiaMesCurto } from "@/lib/data";
 
 const ESCALA = [1, 2, 3, 4, 5] as const satisfies readonly EscalaTreino[];
 const NIVEIS_DOR: NivelDor[] = ["Sem dor", "Leve", "Moderada", "Forte"];
-
-function dataCurta(iso: string): string {
-  return new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-  });
-}
 
 function numeroOpcional(valor: string, minimo: number, maximo: number): number | undefined {
   if (!valor.trim()) return undefined;
@@ -113,7 +107,7 @@ export function CheckinSemanalPortal({
         <span className="min-w-0 flex-1">
           <span className="block font-display font-semibold">Check-in da semana</span>
           <span className="mt-0.5 block text-xs text-muted">
-            {dataCurta(semanaInicio)} a {dataCurta(fimDaSemana(semanaInicio))}
+            {fmtDiaMesCurto(semanaInicio)} a {fmtDiaMesCurto(fimDaSemana(semanaInicio))}
             {existente || salvo ? " · enviado" : " · leva menos de 2 minutos"}
           </span>
         </span>

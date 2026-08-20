@@ -6,6 +6,7 @@ import { analisarExercicios, volumeTotalPorData } from "@/lib/progressao";
 import { LineChart, type ChartPoint } from "./LineChart";
 import { Badge, Button, Card, Select, cx } from "./ui";
 import { ChartIcon, CheckIcon, TargetIcon, TrendUpIcon, XIcon } from "./icons";
+import { fmtDiaMes } from "@/lib/data";
 
 type Metrica = "carga" | "volume" | "e1rm" | "rpe";
 
@@ -15,13 +16,6 @@ const METRICAS: { id: Metrica; label: string; unidade: string }[] = [
   { id: "e1rm", label: "e1RM", unidade: " kg" },
   { id: "rpe", label: "RPE", unidade: "" },
 ];
-
-function dataCurta(iso: string): string {
-  return new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-  });
-}
 
 function numero(valor: number, casas = 0): string {
   return valor.toLocaleString("pt-BR", {
@@ -76,7 +70,7 @@ export function Progressao({ alunoId }: { alunoId: string }) {
                 ? ponto.e1rmKg
                 : ponto.rpeMedio;
         // RPE pode não existir em alguns registros; nesses pontos, omite do gráfico.
-        return value == null ? [] : [{ label: dataCurta(ponto.data), value }];
+        return value == null ? [] : [{ label: fmtDiaMes(ponto.data), value }];
       })
     : [];
   const metricaAtual = METRICAS.find((item) => item.id === metrica) ?? METRICAS[0];
@@ -217,7 +211,7 @@ export function Progressao({ alunoId }: { alunoId: string }) {
                       key={ponto.historicoId}
                       className="grid grid-cols-2 gap-2 px-3 py-2.5 text-sm sm:grid-cols-5"
                     >
-                      <span className="font-semibold">{dataCurta(ponto.data)}</span>
+                      <span className="font-semibold">{fmtDiaMes(ponto.data)}</span>
                       <span className="text-muted">{numero(ponto.cargaKg, 1)} kg</span>
                       <span className="text-muted">{numero(ponto.volumeKg)} kg</span>
                       <span className="text-muted">{numero(ponto.e1rmKg, 1)} kg</span>

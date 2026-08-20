@@ -24,6 +24,7 @@ import {
   XIcon,
 } from "@/components/icons";
 import { Badge, Button, Card, cx } from "@/components/ui";
+import { fmtDataHora, fmtDiaMesAno } from "@/lib/data";
 
 const STATUS: { value: StatusLembreteWhatsApp; label: string }[] = [
   { value: "pendente", label: "Pendentes" },
@@ -51,22 +52,11 @@ const TIPOS: Record<
 };
 
 function dataCurta(iso?: string): string | null {
-  if (!iso) return null;
-  return new Date(`${iso}T12:00:00`).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  return iso ? fmtDiaMesAno(iso) : null;
 }
 
 function dataHora(iso?: string): string | null {
-  if (!iso) return null;
-  return new Date(iso).toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return iso ? fmtDataHora(iso) : null;
 }
 
 export default function LembretesPage() {

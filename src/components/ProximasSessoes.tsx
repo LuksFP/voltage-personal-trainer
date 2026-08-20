@@ -8,20 +8,14 @@ import { Badge, Button, Card } from "./ui";
 import { Modal } from "./Modal";
 import { SessaoForm, type SessaoFormPayload } from "./SessaoForm";
 import { CalendarIcon, CheckIcon, PlusIcon, XIcon } from "./icons";
-
-function isoLocal(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
+import { paraIso } from "@/lib/data";
 
 function rotuloData(iso: string, hojeIso: string): string {
   if (iso === hojeIso) return "Hoje";
   const d = new Date(`${iso.slice(0, 10)}T12:00:00`);
   const amanha = new Date();
   amanha.setDate(amanha.getDate() + 1);
-  if (iso === isoLocal(amanha)) return "Amanhã";
+  if (iso === paraIso(amanha)) return "Amanhã";
   return d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" });
 }
 
@@ -30,7 +24,7 @@ export function ProximasSessoes({ alunoId }: { alunoId: string }) {
   const [formOpen, setFormOpen] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  const hojeIso = isoLocal(new Date());
+  const hojeIso = paraIso(new Date());
   const proximas = sessoes
     .filter((s) => s.alunoId === alunoId && s.data >= hojeIso)
     .sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora))
