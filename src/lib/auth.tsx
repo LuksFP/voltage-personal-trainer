@@ -8,11 +8,20 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import type { TipoChavePix } from "./pix";
 
 export interface Personal {
   nome: string;
   email: string;
   bio?: string;
+  /** Recebimento por Pix — usado pra montar o copia-e-cola das mensalidades. */
+  pixChave?: string;
+  pixTipo?: TipoChavePix;
+  /** Nome e cidade que aparecem no app do banco do aluno. */
+  pixNome?: string;
+  pixCidade?: string;
+  /** CPF/CNPJ impresso no recibo (opcional). */
+  documento?: string;
 }
 
 interface Conta extends Personal {
@@ -43,6 +52,13 @@ function lerContas(): Conta[] {
 }
 function salvarContas(contas: Conta[]) {
   localStorage.setItem(CONTAS_KEY, JSON.stringify(contas));
+}
+
+/** A sessão guarda o perfil inteiro menos a senha — campos novos entram junto. */
+function semSenha(conta: Conta): Personal {
+  const copia: Partial<Conta> = { ...conta };
+  delete copia.senha;
+  return copia as Personal;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -77,15 +93,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const conta = lerContas().find((c) => c.email.toLowerCase() === email.trim().toLowerCase());
         if (!conta) return { ok: false, erro: "E-mail não cadastrado." };
         if (conta.senha !== senha) return { ok: false, erro: "Senha incorreta." };
-        persistirSessao({ nome: conta.nome, email: conta.email, bio: conta.bio });
+        // Tudo menos a senha entra na sessão (inclui Pix, documento, bio).
+        persistirSessao(semSenha(conta));
         return { ok: true };
       },
       entrarDemo: () => {
-        const demo: Personal = { nome: "Personal Demo", email: "demo@voltage.app" };
+        // A conta de demonstração já vem com Pix configurado (chave fictícia)
+        // pra mostrar a cobrança e o recibo funcionando de ponta a ponta.
+        const demo: Personal = {
+          nome: "Personal Demo",
+          email: "demo@voltage.app",
+          pixChave: "8f2c1e4a-9d3b-4c77-a5e1-6b0d2f7a9c31",
+          pixTipo: "aleatoria",
+          pixNome: "Personal Demo",
+          pixCidade: "Guaruja",
+        };
         const contas = lerContas();
-        if (!contas.some((c) => c.email === demo.email)) {
-          salvarContas([...contas, { ...demo, senha: "demo" }]);
-        }
+        const existente = contas.find((c) => c.email === demo.email);
+        // Conta de demo criada antes do Pix existir não fica pra trás.
+        salvarContas(
+          existente
+            ? contas.map((c) => (c.email === demo.email ? { ...c, ...demo } : c))
+            : [...contas, { ...demo, senha: "demo" }],
+        );
         persistirSessao(demo);
       },
       cadastrar: (nome, email, senha) => {

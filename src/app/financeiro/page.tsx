@@ -12,15 +12,19 @@ import {
   statusEfetivo,
   type StatusEfetivo,
 } from "@/lib/pagamentos";
+import { useAuth } from "@/lib/auth";
 import { Avatar, Badge, Button, Card, cx } from "@/components/ui";
+import { CobrancaPixModal } from "@/components/CobrancaPixModal";
+import { ReciboModal } from "@/components/ReciboModal";
 import {
   CalendarIcon,
   CheckIcon,
   ChevronRightIcon,
   PlusIcon,
   TrashIcon,
-  WhatsappIcon,
+  WalletIcon,
 } from "@/components/icons";
+import { hojeIso } from "@/lib/data";
 
 // Ordem de exibição: atrasados primeiro, depois pendentes, pagos por último.
 const ordem: Record<StatusEfetivo, number> = { atrasado: 0, pendente: 1, pago: 2 };
@@ -28,8 +32,19 @@ const ordem: Record<StatusEfetivo, number> = { atrasado: 0, pendente: 1, pago: 2
 export default function FinanceiroPage() {
   const { alunos, pagamentos, gerarCobrancas, marcarPago, marcarPendente, removePagamento } =
     useStore();
+  const { personal } = useAuth();
   const [comp, setComp] = useState(competenciaAtual());
   const [aviso, setAviso] = useState<string | null>(null);
+  // Cobrança aberta no modal do Pix e recibo aberto depois de receber.
+  const [cobrando, setCobrando] = useState<Pagamento | null>(null);
+  const [recibo, setRecibo] = useState<Pagamento | null>(null);
+
+  const receber = (p: Pagamento) => {
+    marcarPago(p.id, { metodo: "Pix" });
+    setCobrando(null);
+    // O recibo já sai pronto com os dados do pagamento que acabou de entrar.
+    setRecibo({ ...p, status: "pago", pagoEm: hojeIso(), metodo: "Pix" });
+  };
 
   const aluno = (id: string) => alunos.find((a) => a.id === id);
   const nome = (id: string) => aluno(id)?.nome ?? "Aluno removido";
@@ -149,6 +164,25 @@ export default function FinanceiroPage() {
         </div>
       )}
 
+      {/* Sem chave Pix o botão "Cobrar" só sabe pedir a configuração. */}
+      {!personal?.pixChave && (
+        <div className="flex flex-col gap-3 rounded-xl2 border border-line bg-surface/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <WalletIcon className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">Cadastre sua chave Pix</p>
+              <p className="text-sm text-muted">
+                Com a chave salva, cada cobrança vira um copia-e-cola com valor e mês, pronto
+                pro WhatsApp.
+              </p>
+            </div>
+          </div>
+          <Link href="/perfil" className="shrink-0">
+            <Button variant="outline">Configurar Pix</Button>
+          </Link>
+        </div>
+      )}
+
       {/* Lista de cobranças */}
       {linhas.length === 0 ? (
         <Card className="px-6 py-16 text-center">
@@ -165,9 +199,9 @@ export default function FinanceiroPage() {
               pagamento={p}
               status={st}
               nome={nome(p.alunoId)}
-              telefone={aluno(p.alunoId)?.telefone}
-              competencia={comp}
-              onReceber={() => marcarPago(p.id, { metodo: "Pix" })}
+              onCobrar={() => setCobrando(p)}
+              onReceber={() => receber(p)}
+              onRecibo={() => setRecibo(p)}
               onDesfazer={() => marcarPendente(p.id)}
               onRemover={() => removePagamento(p.id)}
             />
@@ -198,6 +232,20 @@ export default function FinanceiroPage() {
           </div>
         </section>
       )}
+
+      <CobrancaPixModal
+        pagamento={cobrando}
+        alunoNome={cobrando ? nome(cobrando.alunoId) : ""}
+        telefone={cobrando ? aluno(cobrando.alunoId)?.telefone : undefined}
+        onClose={() => setCobrando(null)}
+        onRecebido={() => cobrando && receber(cobrando)}
+      />
+      <ReciboModal
+        pagamento={recibo}
+        alunoNome={recibo ? nome(recibo.alunoId) : ""}
+        telefone={recibo ? aluno(recibo.alunoId)?.telefone : undefined}
+        onClose={() => setRecibo(null)}
+      />
     </div>
   );
 }
@@ -230,30 +278,22 @@ function KpiDinheiro({
   );
 }
 
-function whatsappLink(telefone: string, nome: string, competencia: string, valor: number): string {
-  const digitos = telefone.replace(/\D/g, "");
-  const numero = digitos.startsWith("55") ? digitos : `55${digitos}`;
-  const primeiro = nome.split(" ")[0];
-  const msg = `Oi ${primeiro}! Passando pra lembrar da mensalidade de ${labelCompetencia(competencia)} (${formatBRL(valor)}). Qualquer dúvida é só chamar. 💪`;
-  return `https://wa.me/${numero}?text=${encodeURIComponent(msg)}`;
-}
-
 function LinhaPagamento({
   pagamento: p,
   status,
   nome,
-  telefone,
-  competencia,
+  onCobrar,
   onReceber,
+  onRecibo,
   onDesfazer,
   onRemover,
 }: {
   pagamento: Pagamento;
   status: StatusEfetivo;
   nome: string;
-  telefone?: string;
-  competencia: string;
+  onCobrar: () => void;
   onReceber: () => void;
+  onRecibo: () => void;
   onDesfazer: () => void;
   onRemover: () => void;
 }) {
@@ -278,25 +318,31 @@ function LinhaPagamento({
       {status === "atrasado" && <Badge tone="off">Atrasado</Badge>}
 
       <div className="flex items-center gap-1">
-        {status !== "pago" && telefone && (
-          <a
-            href={whatsappLink(telefone, nome, competencia, p.valor)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="grid h-9 w-9 place-items-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-accent"
-            title="Cobrar no WhatsApp"
-            aria-label="Cobrar no WhatsApp"
+        {status !== "pago" && (
+          <button
+            onClick={onCobrar}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-sm font-semibold text-muted transition-colors hover:border-accent/40 hover:text-accent"
+            title="Gerar cobrança Pix"
           >
-            <WhatsappIcon className="h-5 w-5" />
-          </a>
+            <WalletIcon className="h-4 w-4" />
+            Cobrar
+          </button>
         )}
         {status === "pago" ? (
-          <button
-            onClick={onDesfazer}
-            className="rounded-lg px-3 py-2 text-sm font-semibold text-muted transition-colors hover:bg-surface-2 hover:text-text"
-          >
-            Desfazer
-          </button>
+          <>
+            <button
+              onClick={onRecibo}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-sm font-semibold text-muted transition-colors hover:border-accent/40 hover:text-accent"
+            >
+              Recibo
+            </button>
+            <button
+              onClick={onDesfazer}
+              className="rounded-lg px-3 py-2 text-sm font-semibold text-muted transition-colors hover:bg-surface-2 hover:text-text"
+            >
+              Desfazer
+            </button>
+          </>
         ) : (
           <button
             onClick={onReceber}
