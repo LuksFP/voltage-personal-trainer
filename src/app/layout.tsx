@@ -1,10 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, Manrope } from "next/font/google";
 import "./globals.css";
 import { StoreProvider } from "@/lib/store";
 import { AuthProvider } from "@/lib/auth";
 import { ThemeProvider } from "@/lib/theme";
 import { AppFrame } from "@/components/AppFrame";
+import { RegistrarServiceWorker } from "@/components/RegistrarServiceWorker";
 
 // Aplica o tema salvo antes da hidratação para evitar "flash" de cor errada.
 const themeScript = `(function(){try{var t=localStorage.getItem('pt.theme.v1')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
@@ -24,6 +25,14 @@ const body = Manrope({
 export const metadata: Metadata = {
   title: "Voltage — Gestão de Personal Trainer",
   description: "Cadastre alunos e monte planilhas de treino num só lugar.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "Voltage Personal", statusBarStyle: "black-translucent" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#c6f24e",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -42,6 +51,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-full">
+        <RegistrarServiceWorker />
         <ThemeProvider>
           <AuthProvider>
             <StoreProvider>

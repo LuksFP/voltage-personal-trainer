@@ -1,20 +1,31 @@
 /* Service worker do Voltage.
 
-   Estratégia deliberadamente conservadora: os dados do aluno vivem no
-   localStorage (não passam por aqui), então o SW só precisa garantir que a
-   casca do app abra sem rede — treinar na academia com sinal ruim.
+   São dois PWAs neste domínio — o painel do personal (/) e o app do aluno
+   (/app) — e um service worker só, porque o escopo do registro é a raiz.
 
-   - navegação: rede primeiro, cai pro cache quando offline
+   Estratégia deliberadamente conservadora: os dados vivem no localStorage (não
+   passam por aqui), então o SW só precisa garantir que a casca abra sem rede —
+   treinar (ou dar aula) na academia com sinal ruim.
+
+   - navegação: rede primeiro, cai pra casca do LADO CERTO quando offline
    - estático (_next/static, ícones): cache primeiro, são versionados
    - resto: passa direto
 */
 
-const CACHE = "voltage-v1";
-const CASCA = "/app";
+const CACHE = "voltage-v2";
+const CASCA_ALUNO = "/app";
+const CASCA_PERSONAL = "/";
+
+/** Offline, cada lado cai na sua própria casca: o aluno nunca vê o painel. */
+function cascaDe(pathname) {
+  return pathname === "/app" || pathname.startsWith("/app/") ? CASCA_ALUNO : CASCA_PERSONAL;
+}
 
 self.addEventListener("install", (evento) => {
   evento.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll([CASCA, "/icons/icon-192.png"])),
+    caches
+      .open(CACHE)
+      .then((cache) => cache.addAll([CASCA_ALUNO, CASCA_PERSONAL, "/icons/icon-192.png"])),
   );
   self.skipWaiting();
 });
@@ -38,14 +49,15 @@ self.addEventListener("fetch", (evento) => {
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === "navigate") {
+    const casca = cascaDe(url.pathname);
     evento.respondWith(
       fetch(request)
         .then((resposta) => {
           const copia = resposta.clone();
-          caches.open(CACHE).then((cache) => cache.put(CASCA, copia));
+          caches.open(CACHE).then((cache) => cache.put(casca, copia));
           return resposta;
         })
-        .catch(() => caches.match(CASCA).then((cache) => cache ?? Response.error())),
+        .catch(() => caches.match(casca).then((cacheado) => cacheado ?? Response.error())),
     );
     return;
   }

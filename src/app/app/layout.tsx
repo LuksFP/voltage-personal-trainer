@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { AlunoAppProvider } from "@/lib/aluno-app";
-import { RegistrarServiceWorker } from "@/components/aluno/RegistrarServiceWorker";
 
 export const metadata: Metadata = {
   title: "Voltage — seu treino",
   description: "Monte seu treino, registre cada série e acompanhe sua evolução.",
+  manifest: "/app/manifest.webmanifest",
   appleWebApp: { capable: true, title: "Voltage", statusBarStyle: "black-translucent" },
   icons: { apple: "/icons/apple-touch-icon.png" },
 };
@@ -18,7 +18,6 @@ export const viewport: Viewport = {
 export default function AlunoAppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AlunoAppProvider>
-      <RegistrarServiceWorker />
       {children}
     </AlunoAppProvider>
   );

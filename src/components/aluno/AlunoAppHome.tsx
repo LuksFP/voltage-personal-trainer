@@ -18,7 +18,7 @@ import { PortalEvolucao } from "@/components/portal/PortalEvolucao";
 import { PortalHistorico } from "@/components/portal/PortalHistorico";
 import { PerfilAlunoApp } from "./PerfilAlunoApp";
 import { CatalogoPersonais } from "./CatalogoPersonais";
-import { InstalarApp } from "./InstalarApp";
+import { InstalarApp } from "@/components/InstalarApp";
 import { cx } from "@/components/ui";
 import {
   ChartIcon,

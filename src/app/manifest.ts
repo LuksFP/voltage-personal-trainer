@@ -1,24 +1,35 @@
 import type { MetadataRoute } from "next";
 
+/**
+ * Manifest do PAINEL DO PERSONAL (raiz).
+ *
+ * São dois PWAs no mesmo domínio: este e o do aluno (/app/manifest.webmanifest).
+ * O que os separa pro navegador é o par `id` + `start_url` — sem `id` distinto,
+ * instalar um sobrescreve o outro na mesma origem.
+ */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Voltage — seu treino",
-    short_name: "Voltage",
+    id: "/",
+    name: "Voltage — Personal",
+    short_name: "Voltage Personal",
     description:
-      "Monte seu treino, registre cada série e acompanhe sua evolução — com ou sem personal.",
-    // O app instalado abre direto no lado do aluno, não no painel do personal.
-    start_url: "/app",
+      "Seus alunos, planilhas, agenda e financeiro num só lugar — na academia, no celular.",
+    start_url: "/",
     scope: "/",
     display: "standalone",
-    orientation: "portrait",
     background_color: "#0c0e0b",
     theme_color: "#c6f24e",
     lang: "pt-BR",
-    categories: ["health", "fitness", "sports"],
+    categories: ["business", "productivity", "health"],
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
       { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+    ],
+    shortcuts: [
+      { name: "Agenda de hoje", url: "/agenda" },
+      { name: "Alunos", url: "/alunos" },
+      { name: "Financeiro", url: "/financeiro" },
     ],
   };
 }

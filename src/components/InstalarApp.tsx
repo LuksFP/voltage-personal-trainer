@@ -9,9 +9,21 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-const DISPENSADO_KEY = "pt.aluno.instalar-dispensado.v1";
-
-export function InstalarApp() {
+/**
+ * Convite de instalação. Serve os dois PWAs: o painel do personal e o app do
+ * aluno. Cada lado tem sua chave de dispensa — recusar num não pode esconder o
+ * convite do outro, são instalações diferentes.
+ */
+export function InstalarApp({
+  lado = "aluno",
+  titulo,
+  descricao,
+}: {
+  lado?: "aluno" | "personal";
+  titulo?: string;
+  descricao?: string;
+} = {}) {
+  const DISPENSADO_KEY = `pt.${lado}.instalar-dispensado.v1`;
   const [evento, setEvento] = useState<BeforeInstallPromptEvent | null>(null);
   const [visivel, setVisivel] = useState(false);
 
@@ -27,7 +39,7 @@ export function InstalarApp() {
     };
     window.addEventListener("beforeinstallprompt", aoReceber);
     return () => window.removeEventListener("beforeinstallprompt", aoReceber);
-  }, []);
+  }, [DISPENSADO_KEY]);
 
   if (!visivel || !evento) return null;
 
@@ -47,8 +59,12 @@ export function InstalarApp() {
     <section className="flex items-center gap-3 rounded-xl2 border border-volt/30 bg-volt/8 px-4 py-3.5">
       <DownloadIcon className="h-5 w-5 shrink-0 text-volt" />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold">Instala o Voltage no seu celular</p>
-        <p className="text-sm text-muted">Abre direto, sem navegador, e funciona offline.</p>
+        <p className="text-sm font-semibold">
+          {titulo ?? "Instala o Voltage no seu celular"}
+        </p>
+        <p className="text-sm text-muted">
+          {descricao ?? "Abre direto, sem navegador, e funciona offline."}
+        </p>
       </div>
       <button
         type="button"

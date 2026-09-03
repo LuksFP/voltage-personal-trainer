@@ -6,6 +6,7 @@ import { useStore } from "@/lib/store";
 import { ultimoBackup } from "@/lib/backup";
 import { HojeDoPersonal } from "@/components/HojeDoPersonal";
 import { TarefasDoPersonal } from "@/components/TarefasDoPersonal";
+import { InstalarApp } from "@/components/InstalarApp";
 import { Avatar, Badge, Card } from "@/components/ui";
 import {
   CalendarIcon,
@@ -98,6 +99,13 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Convite pra instalar o painel — some sozinho quando já está instalado */}
+      <InstalarApp
+        lado="personal"
+        titulo="Instala o painel no seu celular"
+        descricao="Abre direto na academia, sem navegador, e a agenda do dia funciona offline."
+      />
 
       {/* O dia de trabalho primeiro: no celular é a primeira coisa na tela */}
       <HojeDoPersonal />
