@@ -4,6 +4,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useMemo,
   useState,
   type ReactNode,
@@ -79,6 +80,8 @@ import {
   type CriarAlimentoBancoInput,
 } from "./alimentos";
 import { CURRENT_SCHEMA_VERSION, migrarStoreData } from "./persistencia";
+import { useAuth } from "./auth";
+import { carregarDaNuvem, houveEscritaMaisNova, salvarNaNuvem } from "./nuvem";
 import { sugestoesMaisRecentes } from "./progressao";
 import { gerarCandidatosLembrete } from "./lembretes-whatsapp";
 import {
@@ -131,6 +134,27 @@ import {
 } from "./store-validacoes";
 
 const STORAGE_KEY = "pt.app.v1";
+
+/**
+ * Cache local de quem está logado.
+ *
+ * A chave antiga (sem sufixo) continua sendo a da demonstração e a base que
+ * será promovida pra nuvem na primeira entrada. Separar por conta evita o
+ * pior caso do navegador compartilhado: dois personais no mesmo aparelho
+ * enxergando os alunos um do outro.
+ */
+/** Como está a conversa com o servidor — o Shell mostra isso pro personal. */
+export type EstadoSync =
+  | { estado: "local" }        // demonstração ou deslogado: só navegador
+  | { estado: "carregando" }
+  | { estado: "salvando" }
+  | { estado: "pronto" }
+  | { estado: "conflito" }     // outro aparelho gravou depois; precisa recarregar
+  | { estado: "erro"; mensagem: string };
+
+function chaveLocal(personalId: string | null): string {
+  return personalId ? `${STORAGE_KEY}.${personalId}` : STORAGE_KEY;
+}
 
 export interface StoreData {
   schemaVersion: number;
@@ -486,6 +510,9 @@ type StoreContextValue = StoreConsultas & StoreAcoes;
 // Dois contextos de propósito: quem só escreve (formulários, botões) assina
 // `AcoesContext` e para de re-renderizar quando qualquer dado muda.
 const StoreContext = createContext<StoreContextValue | null>(null);
+// Status da sincronização em contexto próprio: muda em ritmo diferente do
+// dado e não deve entrar no merge de 152 membros do StoreContextValue.
+const SyncContext = createContext<EstadoSync>({ estado: "local" });
 const AcoesContext = createContext<StoreAcoes | null>(null);
 
 /**
@@ -526,7 +553,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [persistenciaLiberada, setPersistenciaLiberada] = useState(false);
 
-  // hidratação a partir do localStorage (ou seed na primeira vez)
+  const { personalId, loading: authCarregando } = useAuth();
+  // Marca d'água da última leitura: serve pra perceber que outro aparelho
+  // gravou depois e não sobrescrever o trabalho dele.
+  const carregadoEm = useRef<string | null>(null);
+  const [sync, setSync] = useState<EstadoSync>({ estado: "local" });
+
+  // hidratação: nuvem quando há conta; localStorage na demo e enquanto desloga
   useEffect(() => {
     const seed: StoreData = {
       schemaVersion: CURRENT_SCHEMA_VERSION,
@@ -555,6 +588,93 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       bancoAlimentos: bancoAlimentosSeed,
       perfisPublicos: perfisPublicosSeed,
     };
+    // Enquanto o auth não resolve, não dá pra saber de qual base carregar —
+    // hidratar aqui faria a tela nascer com o seed e depois pular pro dado
+    // real, e a gravação poderia salvar o seed por cima da nuvem.
+    if (authCarregando) return;
+
+    let cancelado = false;
+    const vazios = {
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      alunos: [],
+      interessados: [],
+      anamneses: [],
+      metasAluno: [],
+      treinos: [],
+      avaliacoes: [],
+      sessoes: [],
+      pagamentos: [],
+      biblioteca: bibliotecaSeed,
+      historicoExercicios: [],
+      templatesTreino: [],
+      programasTreino: [],
+      sugestoesProgressao: [],
+      checkinsSemanais: [],
+      lembretesWhatsApp: [],
+      pacotesSessoes: [],
+      solicitacoesSubstituicao: [],
+      videosExecucao: [],
+      configuracoesHabitos: [],
+      registrosHabitos: [],
+      planosAlimentares: [],
+      registrosRefeicoes: [],
+      bancoAlimentos: bancoAlimentosSeed,
+      perfisPublicos: perfisPublicosSeed,
+    } satisfies StoreData;
+
+    /** Lê e migra o que estiver no navegador, na chave que for. */
+    const lerLocal = (chave: string): { dados: StoreData | null; ok: boolean } => {
+      try {
+        const raw = localStorage.getItem(chave);
+        if (!raw) return { dados: null, ok: true };
+        return { dados: migrarStoreData(JSON.parse(raw), vazios), ok: true };
+      } catch (error) {
+        console.error("Não foi possível migrar a base local.", error);
+        return { dados: null, ok: false };
+      }
+    };
+
+    // ---- Conta de verdade: a nuvem manda ----
+    if (personalId) {
+      void (async () => {
+        setSync({ estado: "carregando" });
+        const r = await carregarDaNuvem(personalId);
+        if (cancelado) return;
+
+        if (!r.ok) {
+          // Offline ou erro de rede: usa o cache local e BLOQUEIA a gravação,
+          // senão uma sessão offline sobrescreveria a nuvem com dado velho.
+          const cache = lerLocal(chaveLocal(personalId));
+          setData(cache.dados ?? seed);
+          setPersistenciaLiberada(false);
+          setSync({ estado: "erro", mensagem: r.erro });
+          setHydrated(true);
+          return;
+        }
+
+        if (r.estado) {
+          const daNuvem = migrarStoreData(r.estado.dados, vazios);
+          carregadoEm.current = r.estado.atualizadoEm;
+          setData(daNuvem);
+        } else {
+          // Primeira entrada nesta conta: promove o que já existe no
+          // navegador (a base que o personal vinha usando) em vez de jogar
+          // fora o trabalho dele e começar do seed.
+          const local = lerLocal(chaveLocal(personalId));
+          const legado = local.dados ?? lerLocal(STORAGE_KEY).dados;
+          carregadoEm.current = null;
+          setData(legado ?? seed);
+        }
+        setPersistenciaLiberada(true);
+        setSync({ estado: "pronto" });
+        setHydrated(true);
+      })();
+      return () => {
+        cancelado = true;
+      };
+    }
+
+    // ---- Demonstração / deslogado: segue local, como sempre foi ----
     let inicial: StoreData = seed;
     let podePersistir = true;
     try {
@@ -597,14 +717,50 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setData(inicial);
     setPersistenciaLiberada(podePersistir);
+    carregadoEm.current = null;
+    setSync({ estado: "local" });
     setHydrated(true);
-  }, []);
+  }, [personalId, authCarregando]);
 
-  // persistência
+  // persistência: cache local sempre, nuvem quando há conta
   useEffect(() => {
     if (!hydrated || !persistenciaLiberada) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }, [data, hydrated, persistenciaLiberada]);
+
+    const chave = chaveLocal(personalId);
+    try {
+      localStorage.setItem(chave, JSON.stringify(data));
+    } catch (error) {
+      // Cota estoura com vídeo/foto em base64; a nuvem ainda pode dar conta.
+      console.error("Não foi possível gravar o cache local.", error);
+    }
+
+    if (!personalId) return;
+
+    // Agrupa rajadas de digitação numa gravação só.
+    const timer = setTimeout(() => {
+      void (async () => {
+        setSync({ estado: "salvando" });
+
+        if (await houveEscritaMaisNova(personalId, carregadoEm.current)) {
+          // Outro aparelho salvou depois desta aba carregar. Gravar aqui
+          // apagaria aquilo — melhor parar e pedir recarga.
+          setPersistenciaLiberada(false);
+          setSync({ estado: "conflito" });
+          return;
+        }
+
+        const r = await salvarNaNuvem(personalId, data);
+        if (r.ok) {
+          carregadoEm.current = r.atualizadoEm;
+          setSync({ estado: "pronto" });
+        } else {
+          setSync({ estado: "erro", mensagem: r.erro });
+        }
+      })();
+    }, 900);
+
+    return () => clearTimeout(timer);
+  }, [data, hydrated, persistenciaLiberada, personalId]);
 
   // Escrita: criado uma vez (deps []) e nunca mais trocado. Todas as ações
   // usam `setData(d => ...)`, então nenhuma precisa enxergar o estado atual —
@@ -3088,9 +3244,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   return (
     <AcoesContext.Provider value={acoes}>
-      <StoreContext.Provider value={tudo}>{children}</StoreContext.Provider>
+      <SyncContext.Provider value={sync}>
+        <StoreContext.Provider value={tudo}>{children}</StoreContext.Provider>
+      </SyncContext.Provider>
     </AcoesContext.Provider>
   );
+}
+
+/** Como está a gravação no servidor. Só re-renderiza quando o status muda. */
+export function useSync(): EstadoSync {
+  return useContext(SyncContext);
 }
 
 /** Dados + ações. Re-renderiza a cada mudança de dado — use quando você lê algo. */

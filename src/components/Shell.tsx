@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { StatusSync } from "./StatusSync";
 import {
   BookIcon,
   CalendarIcon,
@@ -144,6 +145,10 @@ function TrainerCard() {
       >
         Sair
       </button>
+
+      <div className="mt-3 border-t border-line pt-3">
+        <StatusSync />
+      </div>
     </div>
   );
 }
