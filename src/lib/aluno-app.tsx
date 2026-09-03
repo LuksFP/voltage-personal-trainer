@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { useStore } from "./store";
-import { gerarPlano, type PreferenciasTreino } from "./gerador-treino";
+import { gerarPlano, rotuloModalidade, type PreferenciasTreino } from "./gerador-treino";
 import type { Aluno, PersonalPublico, Treino } from "./types";
 
 /* ──────────────────────────────────────────────────────────────
@@ -83,13 +83,12 @@ interface AlunoAppContextValue {
 const AlunoAppContext = createContext<AlunoAppContextValue | null>(null);
 
 /**
- * O que o personal vê no campo "modalidade" do cadastro. O esporte entra junto
- * porque muda tudo pra quem for pegar esse aluno: quem luta 3x na semana não
- * pode receber a mesma planilha de quem só faz academia.
+ * O que o personal vê como modalidade do aluno. O esporte entra junto porque muda
+ * tudo pra quem for pegar esse aluno: quem luta 3x na semana não pode receber a
+ * mesma planilha de quem só faz academia.
  */
-function rotuloModalidade(prefs: PreferenciasTreino): string {
-  const base = prefs.local === "casa" ? "Treino em casa" : "Musculação";
-  return prefs.esporte ? `${base} + ${prefs.esporte.nome}` : base;
+function modalidadeDaPreferencia(prefs: PreferenciasTreino): string {
+  return rotuloModalidade(prefs.esporte?.nome, prefs.local);
 }
 
 function lerConta(): ContaAluno | null {
@@ -157,7 +156,7 @@ export function AlunoAppProvider({ children }: { children: ReactNode }) {
       addAluno({
         nome: dados.nome.trim(),
         objetivo: dados.preferencias.objetivo,
-        modalidade: rotuloModalidade(dados.preferencias),
+        modalidade: modalidadeDaPreferencia(dados.preferencias),
         esporte: dados.preferencias.esporte?.nome,
         esporteDias: dados.preferencias.esporte?.dias,
         contaApp: true,
@@ -196,7 +195,7 @@ export function AlunoAppProvider({ children }: { children: ReactNode }) {
         if (!conta || !aluno) return;
         updateAluno(conta.alunoId, {
           objetivo: preferencias.objetivo,
-          modalidade: rotuloModalidade(preferencias),
+          modalidade: modalidadeDaPreferencia(preferencias),
           esporte: preferencias.esporte?.nome,
           esporteDias: preferencias.esporte?.dias,
         });

@@ -145,6 +145,20 @@ export const ESPORTES: EsporteInfo[] = [
   },
 ];
 
+/**
+ * Rótulo de modalidade do aluno. Não é campo digitado: sai do contexto de treino
+ * mais o esporte, porque perguntar as duas coisas é perguntar a mesma coisa duas
+ * vezes — a lista de modalidades era a lista de esportes.
+ */
+export function rotuloModalidade(
+  esporte: string | undefined,
+  local: LocalTreino = "academia",
+): string {
+  const base = local === "casa" ? "Treino em casa" : "Musculação";
+  const nome = esporte?.trim();
+  return nome ? `${base} + ${nome}` : base;
+}
+
 export function esporteInfo(nome: string | undefined): EsporteInfo | undefined {
   if (!nome) return undefined;
   const alvo = nome.trim().toLowerCase();

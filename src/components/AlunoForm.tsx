@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Aluno, Objetivo } from "@/lib/types";
 import { EscolherEsporte } from "./EscolherEsporte";
+import { rotuloModalidade } from "@/lib/gerador-treino";
 import { Button, Field, Input, Select, Textarea } from "./ui";
 
 export const OBJETIVOS: Objetivo[] = [
@@ -14,28 +15,16 @@ export const OBJETIVOS: Objetivo[] = [
   "Saúde geral",
 ];
 
-// Sugestões de modalidade — o campo aceita qualquer texto, essas só aparecem no autocomplete.
-export const MODALIDADES: string[] = [
-  "Musculação",
-  "Jiu-Jitsu",
-  "Muay Thai",
-  "Boxe",
-  "MMA",
-  "CrossFit",
-  "Corrida",
-  "Natação",
-  "Ciclismo",
-  "Funcional",
-  "Futebol",
-  "Vôlei",
-];
+export type AlunoFormValues = AlunoFormState & {
+  /** Derivado do esporte na hora de salvar — não é campo do formulário. */
+  modalidade: string;
+};
 
-export type AlunoFormValues = {
+type AlunoFormState = {
   nome: string;
   telefone: string;
   email: string;
   objetivo: Objetivo | "";
-  modalidade: string;
   /** Esporte praticado fora da academia; vazio = nenhum. */
   esporte: string;
   esporteDias: number[];
@@ -57,12 +46,11 @@ export function AlunoForm({
   onCancel: () => void;
   submitLabel?: string;
 }) {
-  const [v, setV] = useState<AlunoFormValues>({
+  const [v, setV] = useState<AlunoFormState>({
     nome: initial?.nome ?? "",
     telefone: initial?.telefone ?? "",
     email: initial?.email ?? "",
     objetivo: initial?.objetivo ?? "",
-    modalidade: initial?.modalidade ?? "",
     esporte: initial?.esporte ?? "",
     esporteDias: initial?.esporteDias ?? [],
     pesoMeta: initial?.pesoMeta != null ? String(initial.pesoMeta).replace(".", ",") : "",
@@ -72,7 +60,7 @@ export function AlunoForm({
     ativo: initial?.ativo ?? true,
   });
 
-  const set = <K extends keyof AlunoFormValues>(k: K, val: AlunoFormValues[K]) =>
+  const set = <K extends keyof AlunoFormState>(k: K, val: AlunoFormState[K]) =>
     setV((prev) => ({ ...prev, [k]: val }));
 
   const canSubmit = v.nome.trim().length >= 2;
@@ -85,7 +73,7 @@ export function AlunoForm({
           onSubmit({
             ...v,
             nome: v.nome.trim(),
-            modalidade: v.modalidade.trim(),
+            modalidade: rotuloModalidade(v.esporte),
             esporte: v.esporte.trim(),
             esporteDias: v.esporte.trim() ? v.esporteDias : [],
             pesoMeta: v.pesoMeta.trim(),
@@ -121,31 +109,20 @@ export function AlunoForm({
         </Field>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Objetivo">
-          <Select value={v.objetivo} onChange={(e) => set("objetivo", e.target.value as Objetivo)}>
-            <option value="">Selecione…</option>
-            {OBJETIVOS.map((o) => (
-              <option key={o} value={o}>
-                {o}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field label="Modalidade" hint="Escolha uma ou digite a específica">
-          <Input
-            value={v.modalidade}
-            onChange={(e) => set("modalidade", e.target.value)}
-            placeholder="Ex.: Jiu-Jitsu"
-            list="modalidades-sugestoes"
-          />
-          <datalist id="modalidades-sugestoes">
-            {MODALIDADES.map((m) => (
-              <option key={m} value={m} />
-            ))}
-          </datalist>
-        </Field>
-      </div>
+      <Field label="Objetivo">
+        <Select
+          value={v.objetivo}
+          onChange={(e) => set("objetivo", e.target.value as Objetivo)}
+          className="sm:max-w-[18rem]"
+        >
+          <option value="">Selecione…</option>
+          {OBJETIVOS.map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </Select>
+      </Field>
 
       <Field
         label="Esporte que pratica"
