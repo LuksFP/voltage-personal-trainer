@@ -15,7 +15,7 @@ import {
 } from "@/lib/catalogo";
 import type { ModalidadeAtendimento, Objetivo, PersonalPublico } from "@/lib/types";
 import { PersonalDetalhe } from "./PersonalDetalhe";
-import { cx } from "@/components/ui";
+import { Select, cx } from "@/components/ui";
 import { CheckIcon, SearchIcon, StarIcon, XIcon } from "@/components/icons";
 
 const ESPECIALIDADES: Objetivo[] = [
@@ -273,7 +273,7 @@ export function CatalogoPersonais() {
               <XIcon className="h-3.5 w-3.5" /> Limpar
             </button>
           )}
-          <select
+          <Select
             value={filtro.ordenacao ?? "relevancia"}
             onChange={(e) =>
               setFiltro((atual) => ({
@@ -282,14 +282,14 @@ export function CatalogoPersonais() {
               }))
             }
             aria-label="Ordenar resultados"
-            className="rounded-lg border border-line bg-surface/70 px-2 py-1.5 text-xs font-semibold outline-none focus:border-accent/60"
+            tamanho="sm"
           >
             {ORDENACOES.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.label}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
       </div>
 

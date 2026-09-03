@@ -1740,7 +1740,7 @@ function SerieRow({
           <Select
             value={serie.metrica}
             onChange={(event) => onChange({ metrica: event.target.value === "tempo" ? "tempo" : "repeticoes" })}
-            className="rounded-lg px-2 py-2 text-xs"
+            tamanho="sm"
           >
             <option value="repeticoes">Repetições</option>
             <option value="tempo">Tempo</option>

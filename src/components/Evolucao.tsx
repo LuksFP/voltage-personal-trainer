@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import type { Avaliacao } from "@/lib/types";
-import { Button, Card, cx } from "./ui";
+import { Button, Card, Select, cx } from "./ui";
 import { Modal } from "./Modal";
 import { LineChart, type ChartPoint } from "./LineChart";
 import { AvaliacaoForm, type AvaliacaoFormPayload } from "./AvaliacaoForm";
@@ -246,18 +246,19 @@ export function Evolucao({ alunoId }: { alunoId: string }) {
                     </button>
                     <div className="flex items-center justify-between gap-1 px-2 py-1.5">
                       <span className="text-xs font-semibold">{rot}</span>
-                      <select
+                      <Select
                         value={valor}
                         onChange={(e) => onSelect(e.target.value)}
                         aria-label={`Data ${rot.toLowerCase()}`}
-                        className="min-w-0 max-w-[70%] truncate rounded-md bg-surface-2 px-1.5 py-1 text-xs text-muted"
+                        tamanho="sm"
+                        className="min-w-0 max-w-[70%]"
                       >
                         {comFotos.map((opt) => (
                           <option key={opt.id} value={opt.id}>
                             {fmtData(opt.data)}
                           </option>
                         ))}
-                      </select>
+                      </Select>
                     </div>
                   </div>
                 ))}

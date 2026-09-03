@@ -37,6 +37,13 @@ html[data-theme="light"] {
 
 html {
   height: 100%;
+  /* Avisa o sistema qual é o tema: é isso que faz o popup nativo do <select>
+     (e a scrollbar) abrir escuro em vez de branco. */
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
 }
 
 body {
@@ -54,6 +61,17 @@ body {
 .font-display {
   font-family: var(--font-display);
   letter-spacing: -0.02em;
+}
+
+/* A lista aberta do <select> quem desenha é o sistema, não o CSS do componente.
+   Isso é o pouco que dá pra pintar pra ela não abrir branca sobre o tema escuro. */
+select option,
+select optgroup {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+select option:checked {
+  font-weight: 700;
 }
 
 /* scrollbar discreta */

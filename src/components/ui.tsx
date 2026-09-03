@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDownIcon } from "./icons";
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 
 function cx(...parts: (string | false | undefined | null)[]) {
@@ -85,8 +86,43 @@ export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return <textarea {...props} className={cx(fieldBase, "resize-none", props.className)} />;
 }
 
-export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select {...props} className={cx(fieldBase, "appearance-none", props.className)} />;
+/**
+ * Select com seta própria. O `appearance-none` mata a seta do sistema, então ela
+ * volta como ícone nosso — sem isso o campo fica idêntico a um Input e ninguém
+ * descobre que abre. `className` vai no wrapper (é sempre largura/layout).
+ */
+export function Select({
+  className,
+  tamanho = "md",
+  ...props
+}: SelectHTMLAttributes<HTMLSelectElement> & { tamanho?: "md" | "sm" }) {
+  const medidas = {
+    md: { campo: "rounded-2xl px-3.5 py-2.5 pr-12 text-sm", seta: "right-2 h-7 w-7", icone: "h-4 w-4" },
+    sm: { campo: "rounded-xl px-2.5 py-1.5 pr-9 text-xs font-semibold", seta: "right-1.5 h-5 w-5", icone: "h-3 w-3" },
+  }[tamanho];
+
+  return (
+    <div className={cx("relative", className)}>
+      <select
+        {...props}
+        className={cx(
+          "peer w-full cursor-pointer appearance-none border border-line bg-surface text-text outline-none transition-colors",
+          "hover:border-accent/40 focus:border-accent/70 focus:bg-surface-2",
+          medidas.campo,
+        )}
+      />
+      <span
+        aria-hidden
+        className={cx(
+          "pointer-events-none absolute top-1/2 grid -translate-y-1/2 place-items-center rounded-lg text-muted transition-colors",
+          "peer-hover:text-text peer-focus:bg-accent/15 peer-focus:text-accent",
+          medidas.seta,
+        )}
+      >
+        <ChevronDownIcon className={medidas.icone} />
+      </span>
+    </div>
+  );
 }
 
 /* ---------- Badge ---------- */
