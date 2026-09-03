@@ -1,0 +1,64 @@
+name: Supabase keepalive
+
+# O Supabase free pausa o projeto depois de ~7 dias sem nenhuma requisição.
+# Este job faz um SELECT trivial (a RLS devolve lista vazia, o que importa é
+# o banco acordar) a cada 3 dias, com folga de 2 ciclos antes da pausa.
+#
+# ATENÇÃO: o GitHub desabilita `schedule` em repositório sem commits por 60
+# dias — foi o que derrubou o keepalive do fintech-simulator. O job abaixo
+# grava um selo em .github/keepalive-stamp e commita quando ele muda, então o
+# próprio workflow mantém o repositório "ativo" e o schedule vivo.
+
+on:
+  schedule:
+    - cron: "17 9 */3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: supabase-keepalive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Acordar o banco
+        env:
+          URL: ${{ secrets.SUPABASE_URL }}
+          ANON: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${URL:-}" ] || [ -z "${ANON:-}" ]; then
+            echo "::error::Secrets SUPABASE_URL / SUPABASE_ANON_KEY não configurados."
+            exit 1
+          fi
+          for tentativa in 1 2 3; do
+            codigo=$(curl -s -o /tmp/resp.txt -w '%{http_code}' \
+              "$URL/rest/v1/personais?select=id&limit=1" \
+              -H "apikey: $ANON" || echo 000)
+            echo "tentativa $tentativa -> HTTP $codigo"
+            if [ "$codigo" = "200" ]; then
+              echo "Banco respondeu. Projeto segue ativo."
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "::error::Banco não respondeu 200 em 3 tentativas (último: $codigo)"
+          cat /tmp/resp.txt || true
+          exit 1
+
+      - name: Manter o schedule vivo
+        run: |
+          set -euo pipefail
+          date -u +"ultimo-ping: %Y-%m-%dT%H:%M:%SZ" > .github/keepalive-stamp
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/keepalive-stamp
+          git diff --staged --quiet && echo "nada a commitar" && exit 0
+          git commit -m "chore(keepalive): ping do Supabase"
+          git push
