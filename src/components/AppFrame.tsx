@@ -6,6 +6,8 @@ import { useAuth } from "@/lib/auth";
 import { Shell } from "./Shell";
 import { DumbbellIcon } from "./icons";
 
+// `/auth/*` é a volta do Google: o route handler troca o code por sessão e
+// redireciona sozinho — o gate não pode interceptar no meio do caminho.
 const ROTAS_PUBLICAS = ["/login", "/cadastro"];
 
 export function AppFrame({ children }: { children: React.ReactNode }) {
@@ -13,7 +15,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const publica = ROTAS_PUBLICAS.includes(pathname);
+  const publica = ROTAS_PUBLICAS.includes(pathname) || pathname.startsWith("/auth");
   // Rotas do aluno: abertas, sem login do personal e fora do Shell.
   // `/portal` é o link que o personal manda; `/app` é o app do aluno.
   const doAluno = pathname.startsWith("/portal") || pathname.startsWith("/app");

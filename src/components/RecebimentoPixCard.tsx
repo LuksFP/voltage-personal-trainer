@@ -53,7 +53,7 @@ export function RecebimentoPixCard() {
     const limpa = chave.trim();
 
     if (!limpa) {
-      atualizarPerfil({
+      void atualizarPerfil({
         pixChave: undefined,
         pixTipo: undefined,
         pixNome: undefined,
@@ -69,7 +69,7 @@ export function RecebimentoPixCard() {
     if (!valida.ok) return setErro(valida.erro);
     if (!cidade.trim()) return setErro("Informe a cidade — o banco exige no Pix.");
 
-    atualizarPerfil({
+    void atualizarPerfil({
       pixChave: limpa,
       pixTipo: valida.tipo,
       pixNome: (nome.trim() || personal?.nome || "").slice(0, 25),

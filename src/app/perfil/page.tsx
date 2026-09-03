@@ -19,7 +19,7 @@ export default function PerfilPage() {
 
   const salvar = (e: React.FormEvent) => {
     e.preventDefault();
-    atualizarPerfil({ nome: nome.trim(), email: email.trim(), bio: bio.trim() || undefined });
+    void atualizarPerfil({ nome: nome.trim(), email: email.trim(), bio: bio.trim() || undefined });
     setSalvo(true);
     setTimeout(() => setSalvo(false), 2000);
   };
@@ -56,7 +56,7 @@ export default function PerfilPage() {
             <Textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} placeholder="Ex.: Treinador focado em hipertrofia e reeducação postural." />
           </Field>
           <div className="flex items-center justify-between pt-1">
-            <Button type="button" variant="danger" onClick={sair}>
+            <Button type="button" variant="danger" onClick={() => void sair()}>
               Sair da conta
             </Button>
             <div className="flex items-center gap-3">

@@ -139,7 +139,7 @@ function TrainerCard() {
         </div>
       </Link>
       <button
-        onClick={sair}
+        onClick={() => void sair()}
         className="mt-3 w-full rounded-lg border border-line py-2 text-xs font-semibold text-muted transition-colors hover:border-danger/50 hover:text-danger"
       >
         Sair

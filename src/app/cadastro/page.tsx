@@ -1,69 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useAuth } from "@/lib/auth";
+import { Suspense } from "react";
 import { AuthScreen } from "@/components/AuthScreen";
-import { Button, Field, Input } from "@/components/ui";
+import { BotaoGoogle } from "@/components/BotaoGoogle";
 
 export default function CadastroPage() {
-  const { cadastrar } = useAuth();
-  const router = useRouter();
-  const [nome, setNome] = useState("");
-  const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
-  const [erro, setErro] = useState<string | null>(null);
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setErro(null);
-    if (nome.trim().length < 2) return setErro("Informe seu nome.");
-    if (senha.length < 4) return setErro("A senha precisa ter ao menos 4 caracteres.");
-    const r = cadastrar(nome, email, senha);
-    if (r.ok) router.replace("/");
-    else setErro(r.erro ?? "Não foi possível criar a conta.");
-  };
-
   return (
     <AuthScreen titulo="Criar sua conta">
-      <form onSubmit={submit} className="space-y-4">
-        <Field label="Seu nome">
-          <Input
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            placeholder="Ex.: João Personal"
-            autoComplete="name"
-            required
-          />
-        </Field>
-        <Field label="E-mail">
-          <Input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="voce@email.com"
-            autoComplete="email"
-            required
-          />
-        </Field>
-        <Field label="Senha">
-          <Input
-            type="password"
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
-            placeholder="Crie uma senha"
-            autoComplete="new-password"
-            required
-          />
-        </Field>
+      <p className="mb-6 text-sm text-muted">
+        Sua conta usa o Google — não tem senha nova pra decorar. Na primeira
+        entrada a gente já cria seu perfil de personal.
+      </p>
 
-        {erro && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{erro}</p>}
-
-        <Button type="submit" className="w-full">
-          Criar conta
-        </Button>
-      </form>
+      <Suspense fallback={<div className="h-12 animate-pulse rounded-xl bg-surface-2" />}>
+        <BotaoGoogle rotulo="Criar conta com Google" />
+      </Suspense>
 
       <p className="mt-6 text-center text-sm text-muted">
         Já tem conta?{" "}
