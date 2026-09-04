@@ -645,7 +645,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           // Offline ou erro de rede: usa o cache local e BLOQUEIA a gravação,
           // senão uma sessão offline sobrescreveria a nuvem com dado velho.
           const cache = lerLocal(chaveLocal(personalId));
-          setData(cache.dados ?? seed);
+          setData(cache.dados ?? vazios);
           setPersistenciaLiberada(false);
           setSync({ estado: "erro", mensagem: r.erro });
           setHydrated(true);
@@ -657,13 +657,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           carregadoEm.current = r.estado.atualizadoEm;
           setData(daNuvem);
         } else {
-          // Primeira entrada nesta conta: promove o que já existe no
-          // navegador (a base que o personal vinha usando) em vez de jogar
-          // fora o trabalho dele e começar do seed.
+          // Primeira entrada nesta conta: promove o cache DESTA conta, se
+          // houver (é o mesmo personal, noutro momento).
+          //
+          // Conta nova começa VAZIA, nunca no seed: o seed tem 5 alunos
+          // fictícios com treino, pagamento e avaliação, e um personal de
+          // verdade não pode achar aluno que não existe misturado com os
+          // dele — ainda mais com o financeiro e os relatórios contando
+          // esse dado inventado. O seed é só da demonstração.
+          //
+          // Também não se promove mais o `STORAGE_KEY` cru: aquela chave é
+          // compartilhada pela demonstração e por quem só abriu o site
+          // deslogado, então promovê-la fazia a conta real herdar
+          // exatamente os alunos fictícios que este trecho evita. Base
+          // legada de antes do Supabase volta pelo backup em /perfil.
           const local = lerLocal(chaveLocal(personalId));
-          const legado = local.dados ?? lerLocal(STORAGE_KEY).dados;
           carregadoEm.current = null;
-          setData(legado ?? seed);
+          setData(local.dados ?? vazios);
         }
         setPersistenciaLiberada(true);
         setSync({ estado: "pronto" });
