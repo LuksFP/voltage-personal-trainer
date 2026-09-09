@@ -34,6 +34,11 @@ export interface Aluno {
   // Preenchido quando um lead vira aluno; num aluno de app é o que fecha o
   // vínculo e faz o cadastro aparecer na carteira do personal.
   personalEmail?: string;
+  // Segredo do link do portal (/portal/<token>). É o que deixa o aluno abrir o
+  // treino no celular dele sem login: o servidor troca o token pelo par
+  // (personal, aluno) na tabela `portal_acesso`. Só existe em conta de verdade
+  // — na demonstração o portal continua lendo o store local.
+  portalToken?: string;
 }
 
 export type OrigemInteressado =

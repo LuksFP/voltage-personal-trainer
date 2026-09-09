@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
+import { gerarTokenPortal, publicarAcessoPortal } from "@/lib/portal-acesso";
 import { rotuloDias } from "@/lib/dias-treino";
 import { Avatar, Badge, Button, Card } from "@/components/ui";
 import { Modal } from "@/components/Modal";
@@ -183,13 +185,48 @@ export default function AlunoPage() {
 }
 
 function PortalAcesso({ aluno }: { aluno: Aluno }) {
+  const { personalId } = useAuth();
+  const { updateAluno } = useStore();
   const [copiado, setCopiado] = useState(false);
-  // Link absoluto do portal. O card só monta após a hidratação do store (client),
-  // então window já existe aqui; o fallback cobre qualquer render sem window.
-  const [link] = useState(() =>
-    typeof window !== "undefined"
-      ? `${window.location.origin}/portal/${aluno.id}`
-      : `/portal/${aluno.id}`,
+  const [erro, setErro] = useState<string | null>(null);
+  const [tentativa, setTentativa] = useState(0);
+  // Uma emissão por montagem: o efeito roda de novo quando o token entra no
+  // store, e sem esta trava o StrictMode emitiria dois tokens (o segundo
+  // invalidando o primeiro logo depois de mandado).
+  const emitindo = useRef(false);
+
+  // O link do aluno é o token, não o id: quem abre é um celular sem login e
+  // sem este store, e o servidor só sabe de qual personal é o documento
+  // porque o token está indexado na `portal_acesso`.
+  //
+  // Na demonstração (sem conta) não há banco pra indexar: ali o link continua
+  // sendo o id, e o portal lê o store deste navegador mesmo.
+  const precisaEmitir = Boolean(personalId) && !aluno.contaApp && !aluno.portalToken;
+
+  useEffect(() => {
+    if (!personalId || !precisaEmitir || emitindo.current) return;
+    emitindo.current = true;
+    void (async () => {
+      const token = gerarTokenPortal();
+      const r = await publicarAcessoPortal(personalId, aluno.id, token);
+      if (!r.ok) {
+        emitindo.current = false;
+        setErro(r.erro);
+        return;
+      }
+      setErro(null);
+      updateAluno(aluno.id, { portalToken: token });
+    })();
+  }, [personalId, precisaEmitir, aluno.id, updateAluno, tentativa]);
+
+  const codigo = aluno.portalToken ?? aluno.id;
+  // `window` já existe: o card só monta depois da hidratação do store.
+  const link = useMemo(
+    () =>
+      typeof window !== "undefined"
+        ? `${window.location.origin}/portal/${codigo}`
+        : `/portal/${codigo}`,
+    [codigo],
   );
 
   const copiar = async () => {
@@ -241,18 +278,43 @@ function PortalAcesso({ aluno }: { aluno: Aluno }) {
             {aluno.nome.split(" ")[0]} acessa o próprio treino e a agenda pelo celular, e marca os
             treinos feitos.
           </p>
-          <div className="mt-3 truncate rounded-lg border border-line bg-surface px-3 py-2 font-mono text-xs text-muted">
-            {link}
-          </div>
+
+          {precisaEmitir ? (
+            // Enquanto o acesso não está gravado no servidor, mostrar o
+            // endereço seria pior do que não mostrar nada: o personal
+            // mandaria um link que abre "Link inválido" no celular do aluno.
+            <div className="mt-3 rounded-lg border border-line bg-surface px-3 py-2 text-xs text-muted">
+              {erro ? (
+                <span className="text-danger">
+                  Não foi possível criar o link de acesso: {erro}
+                </span>
+              ) : (
+                "Criando o link de acesso…"
+              )}
+            </div>
+          ) : (
+            <div className="mt-3 truncate rounded-lg border border-line bg-surface px-3 py-2 font-mono text-xs text-muted">
+              {link}
+            </div>
+          )}
+
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button variant="outline" onClick={copiar}>
-              <CopyIcon className="h-4 w-4" />
-              {copiado ? "Link copiado ✓" : "Copiar link"}
-            </Button>
-            <Button onClick={enviar}>
-              <WhatsappIcon className="h-4 w-4" />
-              Enviar no WhatsApp
-            </Button>
+            {precisaEmitir && erro ? (
+              <Button variant="outline" onClick={() => setTentativa((n) => n + 1)}>
+                Tentar de novo
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" onClick={copiar} disabled={precisaEmitir}>
+                  <CopyIcon className="h-4 w-4" />
+                  {copiado ? "Link copiado ✓" : "Copiar link"}
+                </Button>
+                <Button onClick={enviar} disabled={precisaEmitir}>
+                  <WhatsappIcon className="h-4 w-4" />
+                  Enviar no WhatsApp
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -522,7 +522,23 @@ const AcoesContext = createContext<StoreAcoes | null>(null);
 function naCarteiraDoPersonal(aluno: Aluno): boolean {
   return !aluno.contaApp || Boolean(aluno.personalEmail);
 }
-export function StoreProvider({ children }: { children: ReactNode }) {
+/**
+ * De onde este provider tira o dado.
+ *
+ * Sem `fonte`, é o de sempre: a conta do personal (nuvem) ou o localStorage
+ * (demonstração). Com `fonte`, é o portal do aluno — o celular dele não tem
+ * login nem acesso ao banco, então lê e grava pelo route handler, que troca o
+ * token pela fatia daquele aluno.
+ */
+export type FonteStore = { tipo: "portal"; token: string };
+
+export function StoreProvider({
+  children,
+  fonte,
+}: {
+  children: ReactNode;
+  fonte?: FonteStore;
+}) {
   const [data, setData] = useState<StoreData>({
     schemaVersion: CURRENT_SCHEMA_VERSION,
     alunos: [],
@@ -588,10 +604,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       bancoAlimentos: bancoAlimentosSeed,
       perfisPublicos: perfisPublicosSeed,
     };
-    // Enquanto o auth não resolve, não dá pra saber de qual base carregar —
-    // hidratar aqui faria a tela nascer com o seed e depois pular pro dado
-    // real, e a gravação poderia salvar o seed por cima da nuvem.
-    if (authCarregando) return;
+
 
     let cancelado = false;
     const vazios = {
@@ -633,6 +646,53 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return { dados: null, ok: false };
       }
     };
+
+    // ---- Portal do aluno: o dado vem do servidor, não deste navegador ----
+    // Vem antes do auth de propósito: o celular do aluno nunca tem sessão, e
+    // esperar o auth resolver só atrasaria a tela.
+    if (fonte) {
+      void (async () => {
+        setSync({ estado: "carregando" });
+        try {
+          const resposta = await fetch(`/api/portal/${fonte.token}`, { cache: "no-store" });
+          if (cancelado) return;
+          if (!resposta.ok) {
+            // 404 é link inválido ou revogado: não adianta tentar de novo, e
+            // liberar a gravação faria o celular empurrar fatia pra um link
+            // que não vale mais.
+            setPersistenciaLiberada(false);
+            setSync({
+              estado: "erro",
+              mensagem:
+                resposta.status === 404
+                  ? "Este link não vale mais. Peça um novo ao seu personal."
+                  : "Não foi possível abrir o seu treino agora.",
+            });
+            setHydrated(true);
+            return;
+          }
+          const corpo = (await resposta.json()) as { dados: unknown; atualizadoEm: string };
+          if (cancelado) return;
+          carregadoEm.current = corpo.atualizadoEm;
+          setData(migrarStoreData(corpo.dados, vazios));
+          setPersistenciaLiberada(true);
+          setSync({ estado: "pronto" });
+        } catch {
+          if (cancelado) return;
+          setPersistenciaLiberada(false);
+          setSync({ estado: "erro", mensagem: "Sem conexão com o servidor." });
+        }
+        setHydrated(true);
+      })();
+      return () => {
+        cancelado = true;
+      };
+    }
+
+    // Enquanto o auth não resolve, não dá pra saber de qual base carregar —
+    // hidratar aqui faria a tela nascer com o seed e depois pular pro dado
+    // real, e a gravação poderia salvar o seed por cima da nuvem.
+    if (authCarregando) return;
 
     // ---- Conta de verdade: a nuvem manda ----
     if (personalId) {
@@ -730,11 +790,47 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     carregadoEm.current = null;
     setSync({ estado: "local" });
     setHydrated(true);
-  }, [personalId, authCarregando]);
+  }, [personalId, authCarregando, fonte]);
 
   // persistência: cache local sempre, nuvem quando há conta
   useEffect(() => {
     if (!hydrated || !persistenciaLiberada) return;
+
+    // ---- Portal do aluno: grava pelo handler, não neste navegador ----
+    // Nada de cache local aqui: o celular do aluno pode ser o mesmo aparelho
+    // em que ele usa o /app, e as duas bases dividiriam a chave.
+    if (fonte) {
+      const timer = setTimeout(() => {
+        void (async () => {
+          setSync({ estado: "salvando" });
+          try {
+            const resposta = await fetch(`/api/portal/${fonte.token}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ dados: data }),
+            });
+            if (resposta.ok) {
+              const corpo = (await resposta.json()) as { atualizadoEm: string };
+              carregadoEm.current = corpo.atualizadoEm;
+              setSync({ estado: "pronto" });
+              return;
+            }
+            if (resposta.status === 409) {
+              // O personal mexeu no treino enquanto o aluno treinava. Parar é
+              // melhor do que insistir: recarregar traz a versão nova.
+              setPersistenciaLiberada(false);
+              setSync({ estado: "conflito" });
+              return;
+            }
+            setSync({ estado: "erro", mensagem: "Não foi possível salvar agora." });
+          } catch {
+            setSync({ estado: "erro", mensagem: "Sem conexão com o servidor." });
+          }
+        })();
+      }, 900);
+
+      return () => clearTimeout(timer);
+    }
 
     const chave = chaveLocal(personalId);
     try {
@@ -770,7 +866,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }, 900);
 
     return () => clearTimeout(timer);
-  }, [data, hydrated, persistenciaLiberada, personalId]);
+  }, [data, hydrated, persistenciaLiberada, personalId, fonte]);
 
   // Escrita: criado uma vez (deps []) e nunca mais trocado. Todas as ações
   // usam `setData(d => ...)`, então nenhuma precisa enxergar o estado atual —

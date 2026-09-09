@@ -2,7 +2,8 @@
 
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import { useStore } from "@/lib/store";
+import { useStore, useSync } from "@/lib/store";
+import { ehTokenPortal } from "@/lib/portal-token";
 import type { Treino } from "@/lib/types";
 import { resumoDoPacote } from "@/lib/pacotes";
 import {
@@ -51,8 +52,14 @@ function dataExtenso(iso: string): string {
 
 export default function PortalPage() {
   const params = useParams<{ codigo: string }>();
-  const { getAluno, treinosDoAluno, sessoes, pacotesDoAluno, metasDoAluno } = useStore();
-  const aluno = getAluno(params.codigo);
+  const { alunos, getAluno, treinosDoAluno, sessoes, pacotesDoAluno, metasDoAluno } = useStore();
+  const sync = useSync();
+  // Com token, o store deste provider é a fatia de UM aluno — o que o servidor
+  // devolveu pra este link. Sem token (demonstração), o código é o id mesmo.
+  const porToken = ehTokenPortal(params.codigo);
+  const aluno = porToken ? alunos[0] : getAluno(params.codigo);
+  const carregando =
+    porToken && !aluno && (sync.estado === "local" || sync.estado === "carregando");
   const hoje = paraIso(new Date());
   const [aba, setAba] = useState<AbaPortal>("inicio");
 
@@ -105,6 +112,17 @@ export default function PortalPage() {
     ? metasDoAluno(aluno.id).some((meta) => meta.status === "ativa" && meta.tipo === "peso")
     : false;
 
+  // A fatia vem do servidor: até ela chegar, "Link inválido" seria mentira.
+  if (carregando) {
+    return (
+      <div className="grid min-h-screen place-items-center px-6">
+        <span className="grid h-14 w-14 animate-pulse place-items-center rounded-2xl bg-volt text-ink">
+          <DumbbellIcon className="h-7 w-7" />
+        </span>
+      </div>
+    );
+  }
+
   if (!aluno) {
     return (
       <div className="grid min-h-screen place-items-center px-6">
@@ -114,7 +132,9 @@ export default function PortalPage() {
           </span>
           <p className="font-display mt-4 text-xl font-semibold">Link inválido</p>
           <p className="mt-2 text-sm text-muted">
-            Este acesso não existe mais. Peça um novo link ao seu personal.
+            {sync.estado === "erro"
+              ? sync.mensagem
+              : "Este acesso não existe mais. Peça um novo link ao seu personal."}
           </p>
         </div>
       </div>
