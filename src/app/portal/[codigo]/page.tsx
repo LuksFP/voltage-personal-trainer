@@ -433,7 +433,7 @@ export default function PortalPage() {
         {aba === "historico" && <PortalHistorico alunoId={aluno.id} hoje={hoje} />}
 
         <p className="pt-4 text-center text-xs text-muted">
-          Feito com Voltage · fale com seu personal para dúvidas
+          Feito com Clippboard · fale com seu personal para dúvidas
         </p>
       </main>
     </div>

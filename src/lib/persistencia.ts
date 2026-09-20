@@ -1132,7 +1132,7 @@ export function migrarStoreData(input: unknown, defaults: StoreData): StoreData 
     throw new Error("A versão da base de dados é inválida.");
   }
   if (typeof version === "number" && version > CURRENT_SCHEMA_VERSION) {
-    throw new Error("Esta base foi criada por uma versão mais nova do Voltage.");
+    throw new Error("Esta base foi criada por uma versão mais nova do Clippboard.");
   }
 
   const alunos = collection(input, "alunos", isAluno, defaults.alunos);

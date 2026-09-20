@@ -10,8 +10,8 @@ import type { MetadataRoute } from "next";
  */
 const manifest: MetadataRoute.Manifest = {
   id: "/app",
-  name: "Voltage — seu treino",
-  short_name: "Voltage",
+  name: "Clippboard — seu treino",
+  short_name: "Clippboard",
   description:
     "Monte seu treino, registre cada série e acompanhe sua evolução — com ou sem personal.",
   start_url: "/app",

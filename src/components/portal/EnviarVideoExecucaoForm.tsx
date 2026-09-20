@@ -125,7 +125,7 @@ export function EnviarVideoExecucaoForm({
       </Field>
 
       <p className="rounded-xl bg-surface-2/50 px-3 py-2 text-xs leading-relaxed text-muted">
-        O arquivo fica salvo somente neste aparelho. Comentários e status entram no backup do Voltage.
+        O arquivo fica salvo somente neste aparelho. Comentários e status entram no backup do Clippboard.
       </p>
       {erro && (
         <p role="alert" className="rounded-xl bg-danger/10 px-3 py-2 text-sm font-semibold text-danger">

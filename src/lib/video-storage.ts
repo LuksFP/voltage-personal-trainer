@@ -71,7 +71,7 @@ function abrirBanco(): Promise<IDBDatabase> {
     request.onblocked = () => {
       falhar(
         new Error(
-          "O armazenamento de vídeos está bloqueado. Feche outras abas do Voltage e tente novamente.",
+          "O armazenamento de vídeos está bloqueado. Feche outras abas do Clippboard e tente novamente.",
         ),
       );
     };

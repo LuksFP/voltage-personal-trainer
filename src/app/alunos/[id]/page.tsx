@@ -241,7 +241,7 @@ function PortalAcesso({ aluno }: { aluno: Aluno }) {
 
   const enviar = () => {
     const primeiro = aluno.nome.split(" ")[0];
-    const texto = `Oi ${primeiro}! Este é o seu acesso ao Voltage para ver seu treino e sua agenda pelo celular: ${link}`;
+    const texto = `Oi ${primeiro}! Este é o seu acesso ao Clippboard para ver seu treino e sua agenda pelo celular: ${link}`;
     window.open(linkWhatsapp(texto, aluno.telefone), "_blank", "noopener,noreferrer");
   };
 
@@ -256,7 +256,7 @@ function PortalAcesso({ aluno }: { aluno: Aluno }) {
           <div className="min-w-0 flex-1">
             <h2 className="font-display font-semibold">Já treina pelo app</h2>
             <p className="mt-0.5 text-sm text-muted">
-              {aluno.nome.split(" ")[0]} usa o Voltage no celular. A planilha que você montar aqui
+              {aluno.nome.split(" ")[0]} usa o Clippboard no celular. A planilha que você montar aqui
               aparece lá como treino do dia, e o que ele marcar volta pra sua agenda e seus
               relatórios.
             </p>

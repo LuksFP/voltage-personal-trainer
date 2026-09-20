@@ -32,7 +32,7 @@ export function AuthScreen({
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-ink text-accent">
             <DumbbellIcon className="h-5 w-5" />
           </span>
-          <span className="font-display text-lg font-bold tracking-tight">Voltage</span>
+          <span className="font-display text-lg font-bold tracking-tight">Clippboard</span>
         </div>
 
         <div className="relative mt-auto">
@@ -59,7 +59,7 @@ export function AuthScreen({
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-volt text-ink">
               <DumbbellIcon className="h-5 w-5" />
             </span>
-            <span className="font-display text-lg font-bold tracking-tight">Voltage</span>
+            <span className="font-display text-lg font-bold tracking-tight">Clippboard</span>
           </div>
 
           <h2 className="font-display text-2xl font-bold">{titulo}</h2>

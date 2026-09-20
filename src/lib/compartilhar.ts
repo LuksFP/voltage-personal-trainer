@@ -41,7 +41,7 @@ export function treinoParaTexto(treino: Treino, alunoNome?: string): string {
     linhas.push("");
   }
 
-  linhas.push("— enviado via Voltage");
+  linhas.push("— enviado via Clippboard");
   return linhas.join("\n");
 }
 

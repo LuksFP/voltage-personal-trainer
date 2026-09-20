@@ -101,7 +101,7 @@ export function PerfilPublicoCard() {
           <div className="min-w-0">
             <h2 className="font-display text-lg font-semibold">Apareça no catálogo do app</h2>
             <p className="mt-1 text-sm text-muted">
-              Alunos que baixam o Voltage e treinam sozinhos podem te procurar por cidade,
+              Alunos que baixam o Clippboard e treinam sozinhos podem te procurar por cidade,
               especialidade e preço. Quem te chamar cai direto em{" "}
               <Link href="/interessados" className="font-semibold text-accent">
                 Interessados

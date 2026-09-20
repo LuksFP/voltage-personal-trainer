@@ -23,10 +23,10 @@ const body = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Voltage — Gestão de Personal Trainer",
+  title: "Clippboard — Gestão de Personal Trainer",
   description: "Cadastre alunos e monte planilhas de treino num só lugar.",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "Voltage Personal", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: "Clippboard Personal", statusBarStyle: "black-translucent" },
   icons: { apple: "/icons/apple-touch-icon.png" },
 };
 

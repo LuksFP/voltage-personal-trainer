@@ -1,7 +1,10 @@
 import type { StoreData } from "./store";
 import { CURRENT_SCHEMA_VERSION, migrarStoreData } from "./persistencia";
 
-const APP = "voltage";
+const APP = "clippboard";
+/** Carimbo antigo: o app se chamava Voltage. Backup exportado naquela época
+ *  continua válido — só a gravação usa o nome novo. */
+const APP_ANTERIOR = "voltage";
 const FORMATO_VERSAO = 2;
 
 export interface Backup {
@@ -41,8 +44,8 @@ export function parseBackup(texto: string): StoreData {
   }
   const raw = obj as Record<string, unknown>;
 
-  if (raw.app !== undefined && raw.app !== APP) {
-    throw new Error("Este arquivo não é um backup do Voltage.");
+  if (raw.app !== undefined && raw.app !== APP && raw.app !== APP_ANTERIOR) {
+    throw new Error("Este arquivo não é um backup do Clippboard.");
   }
 
   // Aceita tanto o formato com envelope { app, dados } quanto o objeto de dados cru.

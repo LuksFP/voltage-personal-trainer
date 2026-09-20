@@ -314,7 +314,7 @@ export function pagamentosSeed(): Pagamento[] {
 export const perfisPublicosSeed: PersonalPublico[] = [
   {
     id: "pp1",
-    email: "camila.arruda@voltage.app",
+    email: "camila.arruda@clippboard.fit",
     nome: "Camila Arruda",
     bio: "Trabalho com quem está voltando a treinar depois de anos parado. Primeiro mês é sobre criar o hábito, não sobre pegar carga.",
     especialidades: ["Emagrecimento", "Saúde geral"],
@@ -333,7 +333,7 @@ export const perfisPublicosSeed: PersonalPublico[] = [
   },
   {
     id: "pp2",
-    email: "diego.tavares@voltage.app",
+    email: "diego.tavares@clippboard.fit",
     nome: "Diego Tavares",
     bio: "Powerlifting e força pura. Se o seu objetivo é agachar, supinar e levantar terra mais pesado do que ano passado, a gente se entende.",
     especialidades: ["Força", "Hipertrofia"],
@@ -352,7 +352,7 @@ export const perfisPublicosSeed: PersonalPublico[] = [
   },
   {
     id: "pp3",
-    email: "juliana.paes@voltage.app",
+    email: "juliana.paes@clippboard.fit",
     nome: "Juliana Paes Ribeiro",
     bio: "Consultoria online com ajuste de planilha toda semana. Atendo quem treina em casa ou em academia sem estrutura.",
     especialidades: ["Hipertrofia", "Emagrecimento"],
@@ -369,7 +369,7 @@ export const perfisPublicosSeed: PersonalPublico[] = [
   },
   {
     id: "pp4",
-    email: "marcos.beltrao@voltage.app",
+    email: "marcos.beltrao@clippboard.fit",
     nome: "Marcos Beltrão",
     bio: "Corrida e condicionamento na orla. Monto periodização pra primeira prova de 10k e acompanho presencial ou por chamada.",
     especialidades: ["Condicionamento", "Saúde geral"],
@@ -388,7 +388,7 @@ export const perfisPublicosSeed: PersonalPublico[] = [
   },
   {
     id: "pp5",
-    email: "renata.kobayashi@voltage.app",
+    email: "renata.kobayashi@clippboard.fit",
     nome: "Renata Kobayashi",
     bio: "Pós-lesão e volta ao treino com dor. Trabalho junto com fisioterapeuta e respeito o laudo — sem heroísmo.",
     especialidades: ["Reabilitação", "Saúde geral"],
@@ -407,7 +407,7 @@ export const perfisPublicosSeed: PersonalPublico[] = [
   },
   {
     id: "pp6",
-    email: "thiago.nunes@voltage.app",
+    email: "thiago.nunes@clippboard.fit",
     nome: "Thiago Nunes",
     bio: "Primeiro treino é grátis e sem enrolação. Foco em quem tem pouco tempo: sessões de 45 minutos que cabem no intervalo do trabalho.",
     especialidades: ["Hipertrofia", "Condicionamento"],

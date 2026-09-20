@@ -90,7 +90,7 @@ export function RecebimentoPixCard() {
             Recebimento por Pix
           </h2>
           <p className="mt-1 text-sm text-muted">
-            O dinheiro cai direto na sua conta. O Voltage só monta o copia-e-cola da cobrança.
+            O dinheiro cai direto na sua conta. O Clippboard só monta o copia-e-cola da cobrança.
           </p>
         </div>
         {personal?.pixChave ? (

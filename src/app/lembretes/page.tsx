@@ -152,7 +152,7 @@ export default function LembretesPage() {
           <p className="text-sm font-semibold uppercase tracking-widest text-accent">WhatsApp</p>
           <h1 className="font-display mt-1 text-3xl font-bold sm:text-4xl">Central de lembretes</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted">
-            O Voltage identifica o que precisa ser lembrado, prepara a mensagem e deixa o envio sob
+            O Clippboard identifica o que precisa ser lembrado, prepara a mensagem e deixa o envio sob
             sua confirmação.
           </p>
         </div>

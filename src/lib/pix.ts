@@ -3,7 +3,7 @@
  *
  * Tudo aqui é função pura: monta a string que o aluno cola no app do banco.
  * Não fala com API nenhuma — o Pix é do personal, o dinheiro cai direto na
- * conta dele e o Voltage só registra que a cobrança foi paga.
+ * conta dele e o Clippboard só registra que a cobrança foi paga.
  */
 
 export type TipoChavePix = "cpf" | "cnpj" | "telefone" | "email" | "aleatoria";
