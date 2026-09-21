@@ -28,6 +28,7 @@ import {
   ChartIcon,
   CheckIcon,
   DumbbellIcon,
+  PranchetaIcon,
   GridIcon,
   TargetIcon,
 } from "@/components/icons";
@@ -149,10 +150,10 @@ export default function PortalPage() {
         <div className="mx-auto flex max-w-lg items-center justify-between px-5 py-4">
           <span className="flex items-center gap-2">
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-volt text-ink">
-              <DumbbellIcon className="h-4 w-4" />
+              <PranchetaIcon className="h-4 w-4" />
             </span>
             <span className="font-display font-bold tracking-tight">
-              Volt<span className="text-accent">age</span>
+              Clipp<span className="text-accent">board</span>
             </span>
           </span>
           <span className="text-sm font-semibold text-muted">Portal do aluno</span>

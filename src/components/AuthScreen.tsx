@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
-import { DumbbellIcon } from "./icons";
+import { PranchetaIcon } from "./icons";
 
 // Sobrescreve os tokens de tema só nesta tela -> vira claro/branco,
 // e os componentes de UI (Input, Button, Field) se adaptam sozinhos.
@@ -30,7 +30,7 @@ export function AuthScreen({
 
         <div className="relative flex items-center gap-2.5">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-ink text-accent">
-            <DumbbellIcon className="h-5 w-5" />
+            <PranchetaIcon className="h-5 w-5" />
           </span>
           <span className="font-display text-lg font-bold tracking-tight">Clippboard</span>
         </div>
@@ -57,7 +57,7 @@ export function AuthScreen({
         <div className="w-full max-w-sm">
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-volt text-ink">
-              <DumbbellIcon className="h-5 w-5" />
+              <PranchetaIcon className="h-5 w-5" />
             </span>
             <span className="font-display text-lg font-bold tracking-tight">Clippboard</span>
           </div>

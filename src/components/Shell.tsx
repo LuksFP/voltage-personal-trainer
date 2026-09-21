@@ -9,9 +9,9 @@ import {
   BookIcon,
   CalendarIcon,
   ChartIcon,
-  DumbbellIcon,
   GridIcon,
   LeafIcon,
+  PranchetaIcon,
   TemplateIcon,
   UsersIcon,
   UserPlusIcon,
@@ -110,10 +110,10 @@ function Brand() {
   return (
     <Link href="/" className="flex items-center gap-2.5">
       <span className="grid h-9 w-9 place-items-center rounded-xl bg-volt text-ink">
-        <DumbbellIcon className="h-5 w-5" />
+        <PranchetaIcon className="h-5 w-5" />
       </span>
       <span className="font-display text-lg font-bold tracking-tight">
-        Volt<span className="text-accent">age</span>
+        Clipp<span className="text-accent">board</span>
       </span>
     </Link>
   );
