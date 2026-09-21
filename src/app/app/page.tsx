@@ -4,7 +4,7 @@ import { useAlunoApp } from "@/lib/aluno-app";
 import { OnboardingAluno } from "@/components/aluno/OnboardingAluno";
 import { AlunoAppHome } from "@/components/aluno/AlunoAppHome";
 import { Button } from "@/components/ui";
-import { DumbbellIcon } from "@/components/icons";
+import { PranchetaIcon } from "@/components/icons";
 
 export default function AppDoAlunoPage() {
   const { situacao, conta, criarConta, recriarPerfil, apagarConta } = useAlunoApp();
@@ -13,7 +13,7 @@ export default function AppDoAlunoPage() {
     return (
       <div className="grid min-h-screen place-items-center">
         <span className="grid h-12 w-12 animate-pulse place-items-center rounded-2xl bg-volt text-ink">
-          <DumbbellIcon className="h-6 w-6" />
+          <PranchetaIcon className="h-6 w-6" />
         </span>
       </div>
     );

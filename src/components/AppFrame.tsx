@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { Shell } from "./Shell";
-import { DumbbellIcon } from "./icons";
+import { PranchetaIcon } from "./icons";
 
 // `/auth/*` é a volta do Google: o route handler troca o code por sessão e
 // redireciona sozinho — o gate não pode interceptar no meio do caminho.
@@ -34,7 +34,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
     return (
       <div className="grid min-h-screen place-items-center">
         <span className="grid h-12 w-12 animate-pulse place-items-center rounded-2xl bg-volt text-ink">
-          <DumbbellIcon className="h-6 w-6" />
+          <PranchetaIcon className="h-6 w-6" />
         </span>
       </div>
     );

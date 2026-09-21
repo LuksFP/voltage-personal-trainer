@@ -118,7 +118,7 @@ export default function PortalPage() {
     return (
       <div className="grid min-h-screen place-items-center px-6">
         <span className="grid h-14 w-14 animate-pulse place-items-center rounded-2xl bg-volt text-ink">
-          <DumbbellIcon className="h-7 w-7" />
+          <PranchetaIcon className="h-7 w-7" />
         </span>
       </div>
     );
@@ -129,7 +129,7 @@ export default function PortalPage() {
       <div className="grid min-h-screen place-items-center px-6">
         <div className="text-center">
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-surface-2 text-accent">
-            <DumbbellIcon className="h-7 w-7" />
+            <PranchetaIcon className="h-7 w-7" />
           </span>
           <p className="font-display mt-4 text-xl font-semibold">Link inválido</p>
           <p className="mt-2 text-sm text-muted">
