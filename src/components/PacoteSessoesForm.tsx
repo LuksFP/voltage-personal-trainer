@@ -95,7 +95,7 @@ export function PacoteSessoesForm({
         </Field>
         <Field
           label="Já utilizadas"
-          hint="Aulas feitas antes de cadastrar este pacote no Voltage"
+          hint="Aulas feitas antes de cadastrar este pacote no Clippboard"
         >
           <Input
             type="number"

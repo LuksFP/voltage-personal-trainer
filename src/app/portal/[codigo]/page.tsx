@@ -28,6 +28,7 @@ import {
   ChartIcon,
   CheckIcon,
   DumbbellIcon,
+  PranchetaIcon,
   GridIcon,
   TargetIcon,
 } from "@/components/icons";
@@ -117,7 +118,7 @@ export default function PortalPage() {
     return (
       <div className="grid min-h-screen place-items-center px-6">
         <span className="grid h-14 w-14 animate-pulse place-items-center rounded-2xl bg-volt text-ink">
-          <DumbbellIcon className="h-7 w-7" />
+          <PranchetaIcon className="h-7 w-7" />
         </span>
       </div>
     );
@@ -128,7 +129,7 @@ export default function PortalPage() {
       <div className="grid min-h-screen place-items-center px-6">
         <div className="text-center">
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-surface-2 text-accent">
-            <DumbbellIcon className="h-7 w-7" />
+            <PranchetaIcon className="h-7 w-7" />
           </span>
           <p className="font-display mt-4 text-xl font-semibold">Link inválido</p>
           <p className="mt-2 text-sm text-muted">
@@ -149,10 +150,10 @@ export default function PortalPage() {
         <div className="mx-auto flex max-w-lg items-center justify-between px-5 py-4">
           <span className="flex items-center gap-2">
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-volt text-ink">
-              <DumbbellIcon className="h-4 w-4" />
+              <PranchetaIcon className="h-4 w-4" />
             </span>
             <span className="font-display font-bold tracking-tight">
-              Volt<span className="text-accent">age</span>
+              Clipp<span className="text-accent">board</span>
             </span>
           </span>
           <span className="text-sm font-semibold text-muted">Portal do aluno</span>
@@ -433,7 +434,7 @@ export default function PortalPage() {
         {aba === "historico" && <PortalHistorico alunoId={aluno.id} hoje={hoje} />}
 
         <p className="pt-4 text-center text-xs text-muted">
-          Feito com Voltage · fale com seu personal para dúvidas
+          Feito com Clippboard · fale com seu personal para dúvidas
         </p>
       </main>
     </div>

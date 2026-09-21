@@ -416,3 +416,14 @@ export function HeartPulseIcon(props: IconProps) {
     </svg>
   );
 }
+
+/** Marca do Clippboard: prancheta com as linhas em progressão crescente. */
+export function PranchetaIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M8.6 4.2H6.4A1.9 1.9 0 0 0 4.5 6.1v13.2A1.9 1.9 0 0 0 6.4 21.2h11.2a1.9 1.9 0 0 0 1.9-1.9V6.1a1.9 1.9 0 0 0-1.9-1.9h-2.2" />
+      <path d="M9.4 2.6h5.2a1 1 0 0 1 1 1v2.2H8.4V3.6a1 1 0 0 1 1-1z" />
+      <path d="M8.5 11.2h2.4M8.5 14.6h4.6M8.5 18h7" />
+    </svg>
+  );
+}

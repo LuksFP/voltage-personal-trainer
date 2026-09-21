@@ -1,5 +1,5 @@
 /**
- * Datas do Voltage — um lugar só.
+ * Datas do Clippboard — um lugar só.
  *
  * Regra que vale pra tudo aqui: **data do calendário é string `YYYY-MM-DD`**,
  * nunca `Date`. `Date` só aparece na fronteira (entrada do usuário, aritmética,
@@ -57,7 +57,7 @@ export function somarDias(iso: string, dias: number): string {
   return paraIsoUtc(resultado);
 }
 
-/** Segunda-feira da semana da data (a semana do Voltage começa na segunda). */
+/** Segunda-feira da semana da data (a semana do Clippboard começa na segunda). */
 export function inicioDaSemana(iso: string): string {
   const referencia = dataUtc(iso.slice(0, 10));
   const desdeSegunda = (referencia.getUTCDay() + 6) % 7;

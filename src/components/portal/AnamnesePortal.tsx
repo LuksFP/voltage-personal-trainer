@@ -482,7 +482,7 @@ function FormularioAnamnese({
               })
             }
           >
-            Autorizo o registro local destes dados no Voltage para acompanhamento do treino.
+            Autorizo o registro local destes dados no Clippboard para acompanhamento do treino.
           </Consentimento>
         </div>
         <label className="mt-3 block">

@@ -10,8 +10,8 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Voltage — Personal",
-    short_name: "Voltage Personal",
+    name: "Clippboard — Personal",
+    short_name: "Clippboard Personal",
     description:
       "Seus alunos, planilhas, agenda e financeiro num só lugar — na academia, no celular.",
     start_url: "/",

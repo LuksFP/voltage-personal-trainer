@@ -91,13 +91,13 @@ export function imprimirTreino(treino: Treino, aluno?: Aluno): void {
 </style></head>
 <body>
   <header>
-    <p class="marca">Voltage · Treino</p>
+    <p class="marca">Clippboard · Treino</p>
     <h1>${esc(treino.nome)}</h1>
     <p class="meta">${aluno ? `Aluno: <strong>${esc(aluno.nome)}</strong> · ` : ""}Emitido em ${hoje}</p>
     ${treino.descricao ? `<p class="descricao">${esc(treino.descricao)}</p>` : ""}
   </header>
   ${divisoes}
-  <footer>Gerado por Voltage — Gestão de Personal Trainer</footer>
+  <footer>Gerado por Clippboard — Gestão de Personal Trainer</footer>
   <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 200); };</script>
 </body></html>`;
 

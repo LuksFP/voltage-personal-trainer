@@ -1,4 +1,4 @@
-/* Service worker do Voltage.
+/* Service worker do Clippboard.
 
    São dois PWAs neste domínio — o painel do personal (/) e o app do aluno
    (/app) — e um service worker só, porque o escopo do registro é a raiz.
@@ -12,7 +12,7 @@
    - resto: passa direto
 */
 
-const CACHE = "voltage-v2";
+const CACHE = "clippboard-v1";
 const CASCA_ALUNO = "/app";
 const CASCA_PERSONAL = "/";
 

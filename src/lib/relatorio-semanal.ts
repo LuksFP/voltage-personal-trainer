@@ -722,7 +722,7 @@ function montarTextos(
   return {
     personal,
     aluno,
-    whatsapp: `Oi ${primeiroNome}! Seu resumo semanal do Voltage está pronto:\n\n${aluno}`,
+    whatsapp: `Oi ${primeiroNome}! Seu resumo semanal do Clippboard está pronto:\n\n${aluno}`,
   };
 }
 

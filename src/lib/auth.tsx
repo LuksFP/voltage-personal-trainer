@@ -48,7 +48,7 @@ const DEMO_KEY = "pt.session.demo.v1";
 
 const DEMO: Personal = {
   nome: "Personal Demo",
-  email: "demo@voltage.app",
+  email: "demo@clippboard.fit",
   pixChave: "8f2c1e4a-9d3b-4c77-a5e1-6b0d2f7a9c31",
   pixTipo: "aleatoria",
   pixNome: "Personal Demo",

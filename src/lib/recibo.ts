@@ -59,7 +59,7 @@ export function reciboParaTexto({
   linhas.push(
     "",
     `${personalNome}${personalDocumento ? ` · ${personalDocumento}` : ""}`,
-    "— enviado via Voltage",
+    "— enviado via Clippboard",
   );
   return linhas.join("\n");
 }
@@ -99,7 +99,7 @@ export function imprimirRecibo(dados: DadosRecibo): void {
   <div class="folha">
     <header>
       <div>
-        <p class="marca">Voltage · Recibo</p>
+        <p class="marca">Clippboard · Recibo</p>
         <h1>Recibo de pagamento</h1>
       </div>
       <div class="numero">Nº<strong>${esc(numero)}</strong></div>
@@ -125,7 +125,7 @@ export function imprimirRecibo(dados: DadosRecibo): void {
       <span>${personalDocumento ? esc(personalDocumento) : "Personal trainer"}</span>
     </div>
 
-    <footer>Gerado por Voltage — Gestão de Personal Trainer</footer>
+    <footer>Gerado por Clippboard — Gestão de Personal Trainer</footer>
   </div>
   <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 200); };</script>
 </body></html>`;

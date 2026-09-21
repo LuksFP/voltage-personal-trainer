@@ -2,10 +2,10 @@ import type { Metadata, Viewport } from "next";
 import { AlunoAppProvider } from "@/lib/aluno-app";
 
 export const metadata: Metadata = {
-  title: "Voltage — seu treino",
+  title: "Clippboard — seu treino",
   description: "Monte seu treino, registre cada série e acompanhe sua evolução.",
   manifest: "/app/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "Voltage", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: "Clippboard", statusBarStyle: "black-translucent" },
   icons: { apple: "/icons/apple-touch-icon.png" },
 };
 

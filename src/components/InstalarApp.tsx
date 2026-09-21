@@ -60,7 +60,7 @@ export function InstalarApp({
       <DownloadIcon className="h-5 w-5 shrink-0 text-volt" />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold">
-          {titulo ?? "Instala o Voltage no seu celular"}
+          {titulo ?? "Instala o Clippboard no seu celular"}
         </p>
         <p className="text-sm text-muted">
           {descricao ?? "Abre direto, sem navegador, e funciona offline."}

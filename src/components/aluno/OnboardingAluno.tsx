@@ -19,6 +19,7 @@ import {
   ArrowLeftIcon,
   CheckIcon,
   DumbbellIcon,
+  PranchetaIcon,
   FlameIcon,
   HeartPulseIcon,
   TargetIcon,
@@ -169,7 +170,7 @@ export function OnboardingAluno({
             </button>
           ) : (
             <span className="grid h-9 w-9 place-items-center rounded-lg bg-volt text-ink">
-              <DumbbellIcon className="h-5 w-5" />
+              <PranchetaIcon className="h-5 w-5" />
             </span>
           )}
           <div className="flex flex-1 gap-1">
